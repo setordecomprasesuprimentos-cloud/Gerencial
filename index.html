@@ -1339,8 +1339,6 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-ov').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 
 // ── CONTATOS ──────────────────────────────────────────────────
-let contatos = JSON.parse(localStorage.getItem('contatos_v1') || '[]');
-function saveContatos() { localStorage.setItem('contatos_v1', JSON.stringify(contatos)); }
 function nextCtId() {
   const nums = contatos.map(c=>parseInt(c.id.replace('CT-',''))).filter(n=>!isNaN(n));
   return 'CT-' + String((nums.length ? Math.max(...nums) : 0) + 1).padStart(3,'0');
@@ -1713,30 +1711,51 @@ function restaurarJSON(event) {
   const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     try {
       const data = JSON.parse(e.target.result);
       if (!data.reqs || !Array.isArray(data.reqs)) {
-        alert('❌ Arquivo inválido. Certifique-se de usar um backup gerado por este sistema.');
-        return;
+        alert('❌ Arquivo inválido.'); return;
       }
-      if (!confirm(`Restaurar backup de ${data.exportado ? new Date(data.exportado).toLocaleString('pt-BR') : 'data desconhecida'}?\n\n` +
-        `• ${data.reqs.length} requisições\n• ${(data.contatos||[]).length} contatos\n\n` +
-        `⚠ Os dados atuais serão substituídos.`)) return;
+      if (!confirm(`Restaurar backup?\n\n• ${data.reqs.length} requisições\n• ${(data.contatos||[]).length} contatos\n\n⚠ Os dados atuais serão substituídos.`)) return;
 
+      setSyncStatus('saving');
+
+      // Atualiza memória local
       reqs = data.reqs;
       contatos = data.contatos || [];
       if (data.comps && Array.isArray(data.comps)) COMPS.splice(0, COMPS.length, ...data.comps);
       if (data.obras && Array.isArray(data.obras)) OBRAS.splice(0, OBRAS.length, ...data.obras);
-      save(); saveContatos(); saveComps(); saveObras();
+
+      // Salva no localStorage primeiro (imediato)
+      localStorage.setItem('reqs_v3', JSON.stringify(reqs));
+      localStorage.setItem('contatos_v1', JSON.stringify(contatos));
+      localStorage.setItem('comps_v1', JSON.stringify(COMPS));
+      localStorage.setItem('obras_v1', JSON.stringify(OBRAS));
+
       populaSelects(); renderDash();
-      alert('✅ Backup restaurado e sincronizado com Firebase!');
+
+      // Sobe para Firebase
+      try {
+        await Promise.all([
+          db.collection('dados').doc('requisicoes').set({ list: reqs }),
+          db.collection('dados').doc('contatos').set({ list: contatos }),
+          db.collection('config').doc('obras').set({ list: OBRAS }),
+          db.collection('config').doc('comps').set({ list: COMPS })
+        ]);
+        setSyncStatus('ok');
+        alert('✅ Backup restaurado e sincronizado!\nTodos os dispositivos verão os dados agora.');
+      } catch(fbErr) {
+        setSyncStatus('error');
+        alert('✅ Dados restaurados localmente!\n⚠ Erro ao sincronizar com Firebase. Verifique sua conexão.');
+      }
+
     } catch(err) {
       alert('❌ Erro ao ler o arquivo. Verifique se é um JSON válido.');
     }
   };
   reader.readAsText(file);
-  event.target.value = ''; // reset input
+  event.target.value = '';
 }
 
 // ── INIT ──────────────────────────────────────────────────────
