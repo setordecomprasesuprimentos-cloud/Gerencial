@@ -7,6 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
 :root {
   --bg:#0c0e14; --sur:#13161f; --sur2:#1a1e2e; --sur3:#1f2438;
@@ -168,6 +170,7 @@ input[type=date]{color-scheme:dark}
       <button class="btn btn-ghost btn-sm" onclick="openModalObras()" title="Gerenciar Obras">🏗 Obras</button>
     </div>
     <div class="gbadge">👩‍💼 Gestora: <span>Wanessa Lopes</span></div>
+    <div class="gbadge"><span id="sync-status" style="font-size:11px">🔄 Conectando...</span></div>
     <div style="text-align:right">
       <div id="clock">00:00:00</div>
       <div id="dateStr"></div>
@@ -541,6 +544,19 @@ input[type=date]{color-scheme:dark}
 </div>
 
 <script>
+// ── FIREBASE CONFIG ──────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyCaZEJKElx-WNxpvFou9kppvlummU4bZxs",
+  authDomain: "central-compras.firebaseapp.com",
+  databaseURL: "https://central-compras-default-rtdb.firebaseio.com",
+  projectId: "central-compras",
+  storageBucket: "central-compras.firebasestorage.app",
+  messagingSenderId: "51122471205",
+  appId: "1:51122471205:web:c4824404c64de9f15f9acc"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
 // ── CONSTANTES ──────────────────────────────────────────────
 let OBRAS = JSON.parse(localStorage.getItem('obras_v1') || 'null') || [
   'PMI','Galpão de Santana do Paraíso','CREAS','Escola Albertino',
@@ -549,41 +565,144 @@ let OBRAS = JSON.parse(localStorage.getItem('obras_v1') || 'null') || [
   'Logística','Centro de Controle','PRAD',
   'Mercado Municipal Ipatinga','Praças de Ipatinga'
 ];
-function saveObras() { localStorage.setItem('obras_v1', JSON.stringify(OBRAS)); }
+function saveObras() {
+  localStorage.setItem('obras_v1', JSON.stringify(OBRAS));
+  db.collection('config').doc('obras').set({ list: OBRAS });
+}
 let COMPS = JSON.parse(localStorage.getItem('comps_v1') || 'null') || ['Fernanda','Davi Valadares','Kênia Fidelis'];
-function saveComps() { localStorage.setItem('comps_v1', JSON.stringify(COMPS)); }
+function saveComps() {
+  localStorage.setItem('comps_v1', JSON.stringify(COMPS));
+  db.collection('config').doc('comps').set({ list: COMPS });
+}
 
 // ── STATE ────────────────────────────────────────────────────
-let reqs = JSON.parse(localStorage.getItem('reqs_v3') || '[]');
+let reqs = [];
+let contatos = [];
 let editId = null;
+let _dbReady = false;
+
+// ── INDICADOR DE SYNC ────────────────────────────────────────
+function setSyncStatus(status) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  if (status === 'ok')      { el.textContent = '🟢 Sincronizado'; el.style.color = 'var(--acc3)'; }
+  if (status === 'saving')  { el.textContent = '🔄 Salvando...';  el.style.color = 'var(--warn)'; }
+  if (status === 'error')   { el.textContent = '🔴 Erro sync';    el.style.color = 'var(--dan)';  }
+  if (status === 'offline') { el.textContent = '📴 Offline';      el.style.color = 'var(--mut2)'; }
+}
+
+// ── SAVE (Firebase + localStorage fallback) ──────────────────
+function save() {
+  localStorage.setItem('reqs_v3', JSON.stringify(reqs));
+  setSyncStatus('saving');
+  db.collection('dados').doc('requisicoes').set({ list: reqs })
+    .then(()=>setSyncStatus('ok'))
+    .catch(()=>setSyncStatus('error'));
+}
+function saveContatos() {
+  localStorage.setItem('contatos_v1', JSON.stringify(contatos));
+  setSyncStatus('saving');
+  db.collection('dados').doc('contatos').set({ list: contatos })
+    .then(()=>setSyncStatus('ok'))
+    .catch(()=>setSyncStatus('error'));
+}
+
+// ── INIT FIREBASE (carrega dados em tempo real) ──────────────
+async function initFirebase() {
+  setSyncStatus('saving');
+  try {
+    // Carrega configurações (obras e compradores)
+    const cfgObras = await db.collection('config').doc('obras').get();
+    if (cfgObras.exists && cfgObras.data().list?.length) {
+      OBRAS = cfgObras.data().list;
+      localStorage.setItem('obras_v1', JSON.stringify(OBRAS));
+    }
+    const cfgComps = await db.collection('config').doc('comps').get();
+    if (cfgComps.exists && cfgComps.data().list?.length) {
+      COMPS = cfgComps.data().list;
+      localStorage.setItem('comps_v1', JSON.stringify(COMPS));
+    }
+
+    // Listener em tempo real para requisições
+    db.collection('dados').doc('requisicoes').onSnapshot(snap => {
+      if (snap.exists && snap.data().list) {
+        reqs = snap.data().list;
+        localStorage.setItem('reqs_v3', JSON.stringify(reqs));
+        renderDash();
+        if (document.getElementById('tab-requisicoes').classList.contains('active')) renderReq();
+      }
+      setSyncStatus('ok');
+    });
+
+    // Listener em tempo real para contatos
+    db.collection('dados').doc('contatos').onSnapshot(snap => {
+      if (snap.exists && snap.data().list) {
+        contatos = snap.data().list;
+        localStorage.setItem('contatos_v1', JSON.stringify(contatos));
+        if (document.getElementById('tab-contatos').classList.contains('active')) renderContatos();
+      }
+    });
+
+    // Listener em tempo real para obras e compradores
+    db.collection('config').doc('obras').onSnapshot(snap => {
+      if (snap.exists && snap.data().list?.length) {
+        OBRAS = snap.data().list;
+        localStorage.setItem('obras_v1', JSON.stringify(OBRAS));
+        populaSelects();
+      }
+    });
+    db.collection('config').doc('comps').onSnapshot(snap => {
+      if (snap.exists && snap.data().list?.length) {
+        COMPS = snap.data().list;
+        localStorage.setItem('comps_v1', JSON.stringify(COMPS));
+        populaSelects();
+        if (document.getElementById('tab-compradores').classList.contains('active')) renderComps();
+      }
+    });
+
+    _dbReady = true;
+    setSyncStatus('ok');
+
+    // Se Firebase estiver vazio, faz seed inicial e sobe
+    if (!reqs.length) {
+      const localReqs = JSON.parse(localStorage.getItem('reqs_v3') || '[]');
+      if (localReqs.length) {
+        reqs = localReqs;
+        save();
+      } else {
+        initSeed();
+      }
+    }
+    if (!contatos.length) {
+      const localCts = JSON.parse(localStorage.getItem('contatos_v1') || '[]');
+      if (localCts.length) { contatos = localCts; saveContatos(); }
+    }
+
+  } catch(e) {
+    console.warn('Firebase offline, usando localStorage', e);
+    setSyncStatus('offline');
+    reqs = JSON.parse(localStorage.getItem('reqs_v3') || '[]');
+    contatos = JSON.parse(localStorage.getItem('contatos_v1') || '[]');
+    initSeed();
+    populaSelects();
+    renderDash();
+  }
+}
 
 // ── SEED ─────────────────────────────────────────────────────
 function initSeed() {
-  if (reqs.length) return;
+  if (reqs.length) { populaSelects(); renderDash(); return; }
   const raw = [
     {obra:'PMI',mat:'Concreto usinado 25 MPa',qtd:'15 m³',comp:'Fernanda',tipo:'Planejado',prio:'Alta',status:'Pendente',dtab:'2025-06-01',prazo:'2025-06-20',fechou:'',obs:''},
     {obra:'Galpão de Santana do Paraíso',mat:'Telha metálica trapezoidal',qtd:'400 m²',comp:'Davi Valadares',tipo:'Urgente',prio:'Alta',status:'Pendente',dtab:'2025-06-03',prazo:'2025-06-10',fechou:'',obs:'Paralisação iminente'},
     {obra:'CREAS',mat:'Tinta acrílica premium',qtd:'30 latas',comp:'Kênia Fidelis',tipo:'Planejado',prio:'Média',status:'Finalizada',dtab:'2025-05-20',prazo:'2025-06-05',fechou:'2025-06-04',obs:''},
     {obra:'Escola Albertino',mat:'Piso cerâmico 60x60',qtd:'200 m²',comp:'Fernanda',tipo:'Planejado',prio:'Média',status:'Aguardando PGT Cliente',dtab:'2025-05-28',prazo:'2025-06-15',fechou:'',obs:''},
     {obra:'Escola Benvinda',mat:'Tubulação PVC 100mm',qtd:'50 barras',comp:'Davi Valadares',tipo:'Urgente',prio:'Alta',status:'Pendente',dtab:'2025-06-05',prazo:'2025-06-12',fechou:'',obs:'Vazamento identificado'},
-    {obra:'Escola Altina',mat:'Cimento CP-II 50kg',qtd:'100 sacos',comp:'Kênia Fidelis',tipo:'Planejado',prio:'Baixa',status:'Aguardando Iniciar Obra',dtab:'2025-06-02',prazo:'2025-06-30',fechou:'',obs:''},
-    {obra:'Turmalina',mat:'Ferro CA-50 12.5mm',qtd:'3 ton',comp:'Fernanda',tipo:'Urgente',prio:'Alta',status:'Finalizada',dtab:'2025-05-15',prazo:'2025-05-22',fechou:'2025-05-21',obs:''},
-    {obra:'Centro de Controle',mat:'Cabo elétrico 10mm²',qtd:'500 m',comp:'Davi Valadares',tipo:'Planejado',prio:'Média',status:'Pendente',dtab:'2025-06-06',prazo:'2025-06-25',fechou:'',obs:''},
-    {obra:'PRAD',mat:'Pedra brita nº 1',qtd:'20 m³',comp:'Kênia Fidelis',tipo:'Planejado',prio:'Baixa',status:'Finalizada',dtab:'2025-05-10',prazo:'2025-05-25',fechou:'2025-05-24',obs:''},
-    {obra:'Mercado Municipal Ipatinga',mat:'Estrutura metálica galvanizada',qtd:'1 conjunto',comp:'Fernanda',tipo:'Urgente',prio:'Alta',status:'Aguardando PGT Cliente',dtab:'2025-06-04',prazo:'2025-06-18',fechou:'',obs:'Aprovação pendente'},
-    {obra:'Praças de Ipatinga',mat:'Grama Bermuda',qtd:'300 m²',comp:'Davi Valadares',tipo:'Planejado',prio:'Baixa',status:'Pendente',dtab:'2025-06-07',prazo:'2025-07-01',fechou:'',obs:''},
-    {obra:'PMI',mat:'Vidro temperado 8mm',qtd:'40 m²',comp:'Kênia Fidelis',tipo:'Urgente',prio:'Alta',status:'Pendente',dtab:'2025-06-08',prazo:'2025-06-14',fechou:'',obs:''},
-    {obra:'Logística',mat:'Porta de aço reforçada',qtd:'6 un',comp:'Fernanda',tipo:'Planejado',prio:'Média',status:'Finalizada',dtab:'2025-05-25',prazo:'2025-06-08',fechou:'2025-06-07',obs:''},
-    {obra:'São Gonçalo - Portaria Parque de Exposições',mat:'Guarita pré-fabricada',qtd:'1 un',comp:'Davi Valadares',tipo:'Planejado',prio:'Média',status:'Aguardando Iniciar Obra',dtab:'2025-06-01',prazo:'2025-07-10',fechou:'',obs:''},
-    {obra:'Escola Albertino',mat:'Forro de gesso',qtd:'150 m²',comp:'Kênia Fidelis',tipo:'Urgente',prio:'Média',status:'Pendente',dtab:'2025-06-09',prazo:'2025-06-20',fechou:'',obs:''},
   ];
   let seq = 1;
   reqs = raw.map(r => ({ id:'REQ-'+String(seq++).padStart(3,'0'), ...r }));
-  save();
+  save(); populaSelects(); renderDash();
 }
-
-// ── UTILS ─────────────────────────────────────────────────────
-function save() { localStorage.setItem('reqs_v3', JSON.stringify(reqs)); }
 function nextId() {
   const nums = reqs.map(r=>parseInt(r.id.replace('REQ-',''))).filter(n=>!isNaN(n));
   return 'REQ-' + String((nums.length ? Math.max(...nums) : 0) + 1).padStart(3,'0');
@@ -772,6 +891,7 @@ function renderReq() {
     <td class="nwrap" style="font-size:12px;color:var(--acc3)">${fmt(r.fechou)}</td>
     <td style="display:flex;gap:5px">
       <button class="btn btn-ghost btn-xs" onclick="openUpd('${r.id}')">✏</button>
+      <button class="btn btn-xs" style="background:#4f8ef718;color:var(--acc2);border:1px solid #4f8ef730" onclick="duplicarReq('${r.id}')" title="Duplicar requisição">⧉</button>
       <button class="btn btn-xs" style="background:#f04f4f18;color:var(--dan);border:1px solid #f04f4f30" onclick="excluirReq('${r.id}')">🗑</button>
     </td>
   </tr>`).join('');
@@ -833,6 +953,28 @@ function excluirReq(id) {
   reqs = reqs.filter(x => x.id !== id);
   selectedIds.delete(id);
   save(); renderReq(); renderDash();
+}
+
+function duplicarReq(id) {
+  const r = reqs.find(x => x.id === id);
+  if (!r) return;
+  const novoId = nextId();
+  const hoje = new Date().toISOString().slice(0,10);
+  const copia = {
+    ...r,
+    id: novoId,
+    dtab: hoje,       // data de abertura = hoje
+    fechou: '',       // zera data de fechamento
+    status: 'Pendente', // volta para pendente
+    obs: r.obs ? `[Cópia de ${id}] ${r.obs}` : `[Cópia de ${id}]`
+  };
+  reqs.push(copia); save(); renderReq(); renderDash();
+  // feedback visual: pisca a linha nova
+  setTimeout(()=>{
+    const row = document.getElementById('row-'+novoId);
+    if (row) { row.style.background='rgba(79,142,247,0.15)'; setTimeout(()=>row.style.background='',1500); }
+  }, 50);
+  alert(`✅ Requisição duplicada!\nNova: ${novoId} (cópia de ${id})`);
 }
 function limparF() {
   ['f-busca','f-de','f-ate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
@@ -1588,7 +1730,7 @@ function restaurarJSON(event) {
       if (data.obras && Array.isArray(data.obras)) OBRAS.splice(0, OBRAS.length, ...data.obras);
       save(); saveContatos(); saveComps(); saveObras();
       populaSelects(); renderDash();
-      alert('✅ Backup restaurado com sucesso!');
+      alert('✅ Backup restaurado e sincronizado com Firebase!');
     } catch(err) {
       alert('❌ Erro ao ler o arquivo. Verifique se é um JSON válido.');
     }
@@ -1598,7 +1740,8 @@ function restaurarJSON(event) {
 }
 
 // ── INIT ──────────────────────────────────────────────────────
-initSeed(); populaSelects(); renderDash();
+populaSelects();
+initFirebase();
 </script>
 </body>
 </html>
