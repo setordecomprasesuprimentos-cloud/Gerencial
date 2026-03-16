@@ -597,7 +597,7 @@ window.salvarObra = function salvarObra() {
   saveData('estnovo_obras', obras);
   closeModalObra(); renderObras(); renderObrasBtns(); populateSelects(); populateLocalFilter();
 }
-function excluirObra(id) {
+window.excluirObra = function excluirObra(id) {
   if (historico.some(function(h){return h.local===id||h.destino===id;})) { showToast('Obra possui movimentações.','red'); return; }
   if (!confirm('Excluir esta obra?')) return;
   obras = obras.filter(function(o){return o.id!==id;});
@@ -734,7 +734,7 @@ function renderMateriais() {
   }).join('');
 }
 
-function buscaGlobalFn() {
+window.buscaGlobalFn = function buscaGlobalFn() {
   var q=document.getElementById('buscaGlobal').value.trim().toLowerCase();
   var res=document.getElementById('buscaResultado');
   if(q.length<2){res.style.display='none';return;}
@@ -751,7 +751,7 @@ function buscaGlobalFn() {
     return '<div class="res-item"><div><div class="res-nome">'+m.nome+'</div><div style="font-size:11px;color:var(--muted)">'+m.codigo+' · '+m.unidade+'</div></div><div class="res-locais">'+locaisInfo.join('')+'</div></div>';
   }).join('');
 }
-function limparBusca(){document.getElementById('buscaGlobal').value='';document.getElementById('buscaResultado').style.display='none';}
+window.limparBusca = function limparBusca(){document.getElementById('buscaGlobal').value='';document.getElementById('buscaResultado').style.display='none';}
 
 function updateStats() {
   var est=getEstoque(currentLocal);
@@ -795,7 +795,7 @@ window.switchTab = function switchTab(name){
   if(name==='obras')renderObras();
 }
 
-function openModal(type, preCode) {
+window.openModal = function openModal(type, preCode) {
   document.querySelectorAll('.modal-overlay').forEach(function(m){m.classList.remove('active');});
   var today=new Date().toISOString().split('T')[0];
   if(type==='entrada'){
@@ -826,18 +826,18 @@ function openModal(type, preCode) {
     document.getElementById('modalTransfer').classList.add('active');
   }
 }
-function closeModal(type){
+window.closeModal = function closeModal(type){
   var map={entrada:'modalEntrada',saida:'modalSaida',transfer:'modalTransfer'};
   document.getElementById(map[type]).classList.remove('active');
 }
-function fillUnit(p){
+window.fillUnit = function fillUnit(p){
   var code=document.getElementById(p+'_material').value;
   var mat=materiais.find(function(m){return m.codigo===code;});
   var el=document.getElementById(p+'_unidade');
   if(el)el.value=mat?mat.unidade:'';
   if(p==='t')updateTransferSaldo();
 }
-function updateTransferSaldo(){
+window.updateTransferSaldo = function updateTransferSaldo(){
   var code=document.getElementById('t_material').value;
   var orig=document.getElementById('t_origem').value;
   var qtd=parseFloat(document.getElementById('t_qtd').value)||0;
@@ -849,12 +849,12 @@ function updateTransferSaldo(){
   var oNome=orig==='centro'?'Centro':(obras.find(function(o){return o.id===orig;})||{nome:orig}).nome;
   el.innerHTML='Saldo em <strong style="color:var(--text)">'+oNome+'</strong>: <strong style="color:'+(saldo>=qtd?'var(--green)':'var(--red)')+'">'+fmt(saldo)+' '+(mat?mat.unidade:'')+'</strong>';
 }
-function quickEntry(code){openModal('entrada',code);}
-function quickExit(code){openModal('saida',code);}
+window.quickEntry = function quickEntry(code){openModal('entrada',code);}
+window.quickExit = function quickExit(code){openModal('saida',code);}
 
 function nowStr(){var d=new Date();return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
 
-function registrarEntrada(){
+window.registrarEntrada = function registrarEntrada(){
   var code=document.getElementById('e_material').value;
   var qtd=parseFloat(document.getElementById('e_qtd').value);
   var local=document.getElementById('e_local').value;
@@ -868,7 +868,7 @@ function registrarEntrada(){
   closeModal('entrada');refresh();
   showToast('Entrada de '+fmt(qtd)+' '+mat.unidade+' registrada!','green');
 }
-function registrarSaida(){
+window.registrarSaida = function registrarSaida(){
   var code=document.getElementById('s_material').value;
   var qtd=parseFloat(document.getElementById('s_qtd').value);
   var local=document.getElementById('s_local').value;
@@ -883,7 +883,7 @@ function registrarSaida(){
   closeModal('saida');refresh();
   showToast('Saída de '+fmt(qtd)+' '+mat.unidade+' registrada!','green');
 }
-function registrarTransfer(){
+window.registrarTransfer = function registrarTransfer(){
   var code=document.getElementById('t_material').value;
   var qtd=parseFloat(document.getElementById('t_qtd').value);
   var orig=document.getElementById('t_origem').value;
@@ -943,8 +943,8 @@ window.salvarMaterial = function salvarMaterial(){
   saveData('estnovo_materiais',materiais);
   closeModalMaterial();renderMateriais();refresh();
 }
-function editarMaterial(codigo){openModalMaterial(codigo);}
-function excluirMaterial(codigo){
+window.editarMaterial = function editarMaterial(codigo){openModalMaterial(codigo);}
+window.excluirMaterial = function excluirMaterial(codigo){
   if(historico.some(function(h){return h.codigo===codigo;})){showToast('Material possui movimentações.','red');return;}
   if(!confirm('Excluir o material '+codigo+'?'))return;
   materiais=materiais.filter(function(m){return m.codigo!==codigo;});
@@ -952,12 +952,12 @@ function excluirMaterial(codigo){
   showToast('Material '+codigo+' excluído.','red');
 }
 
-function filterTable(val){renderEstoque(val);}
-function limparFiltros(){
+window.filterTable = function filterTable(val){renderEstoque(val);}
+window.limparFiltros = function limparFiltros(){
   ['f_dataIni','f_dataFim','f_local','f_tipo','f_material','f_obra'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   renderHistorico();
 }
-function clearHistory(){
+window.clearHistory = function clearHistory(){
   if(!confirm('Limpar todo o histórico? O estoque voltará a zero.'))return;
   historico=[];saveData('estnovo_historico',historico);refresh();renderHistorico();
 }
