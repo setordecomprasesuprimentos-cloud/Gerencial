@@ -192,6 +192,28 @@ input[type=date]{color-scheme:dark}
 <!-- DASHBOARD -->
 <div class="tab-content active" id="tab-dashboard">
   <div class="stitle">Painel Geral <span class="pill"><span class="dot"></span>TEMPO REAL</span></div>
+  <!-- FILTROS DASHBOARD -->
+  <div class="fbar" style="margin-bottom:18px">
+    <div class="fg"><label>Obra</label><select id="df-obra" onchange="renderDash()"><option value="">Todas as obras</option></select></div>
+    <div class="fg"><label>Comprador</label><select id="df-comp" onchange="renderDash()"><option value="">Todos</option></select></div>
+    <div class="fg"><label>Status</label>
+      <select id="df-status" onchange="renderDash()">
+        <option value="">Todos</option><option>Pendente</option><option>Finalizada</option>
+        <option>Aguardando PGT Cliente</option><option>Aguardando Iniciar Obra</option>
+      </select>
+    </div>
+    <div class="fg"><label>Tipo</label>
+      <select id="df-tipo" onchange="renderDash()"><option value="">Todos</option><option>Planejado</option><option>Urgente</option></select>
+    </div>
+    <div class="fg"><label>Abertura — De</label><input type="date" id="df-de" onchange="renderDash()"></div>
+    <div class="fg"><label>Abertura — Até</label><input type="date" id="df-ate" onchange="renderDash()"></div>
+    <div class="fg"><label>Contatos — De</label><input type="date" id="df-ct-de" onchange="renderDash()"></div>
+    <div class="fg"><label>Contatos — Até</label><input type="date" id="df-ct-ate" onchange="renderDash()"></div>
+    <div class="fg"><label>Contatos — Obra</label><select id="df-ct-obra" onchange="renderDash()"><option value="">Todas</option></select></div>
+    <div style="display:flex;align-items:flex-end;flex-shrink:0">
+      <button class="btn btn-ghost btn-sm" onclick="limparDashF()">✕ Limpar</button>
+    </div>
+  </div>
   <div class="cards-grid" id="dash-cards"></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
     <div class="twrap">
@@ -760,10 +782,53 @@ function showTab(id) {
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────
+function getDashFilt() {
+  const fo = document.getElementById('df-obra')?.value||'';
+  const fc = document.getElementById('df-comp')?.value||'';
+  const fs = document.getElementById('df-status')?.value||'';
+  const ft = document.getElementById('df-tipo')?.value||'';
+  const fde= document.getElementById('df-de')?.value||'';
+  const fat= document.getElementById('df-ate')?.value||'';
+  return reqs.filter(r=>{
+    if(fo && r.obra!==fo) return false;
+    if(fc && r.comp!==fc) return false;
+    if(fs && r.status!==fs) return false;
+    if(ft && r.tipo!==ft) return false;
+    if(fde && r.dtab<fde) return false;
+    if(fat && r.dtab>fat) return false;
+    return true;
+  });
+}
+function getDashCtFilt() {
+  const fo = document.getElementById('df-ct-obra')?.value||'';
+  const fde= document.getElementById('df-ct-de')?.value||'';
+  const fat= document.getElementById('df-ct-ate')?.value||'';
+  return contatos.filter(c=>{
+    if(fo && c.obra!==fo) return false;
+    if(fde && c.dt.slice(0,10)<fde) return false;
+    if(fat && c.dt.slice(0,10)>fat) return false;
+    return true;
+  });
+}
+function limparDashF() {
+  ['df-obra','df-comp','df-status','df-tipo','df-de','df-ate','df-ct-de','df-ct-ate','df-ct-obra'].forEach(id=>{
+    const e=document.getElementById(id); if(e) e.value='';
+  });
+  renderDash();
+}
 function renderDash() {
-  const tot=reqs.length, pend=reqs.filter(r=>r.status==='Pendente').length;
-  const fin=reqs.filter(r=>r.status==='Finalizada').length, late=reqs.filter(r=>isLate(r)).length;
-  const plan=reqs.filter(r=>r.tipo==='Planejado').length, urg=reqs.filter(r=>r.tipo==='Urgente').length;
+  // Popula selects dos filtros do dashboard
+  const dfo=document.getElementById('df-obra');
+  if(dfo){ const v=dfo.value; dfo.innerHTML='<option value="">Todas as obras</option>'+OBRAS.map(o=>`<option>${o}</option>`).join(''); dfo.value=v; }
+  const dfc=document.getElementById('df-comp');
+  if(dfc){ const v=dfc.value; dfc.innerHTML='<option value="">Todos</option>'+COMPS.map(c=>`<option>${c}</option>`).join(''); dfc.value=v; }
+  const dfco=document.getElementById('df-ct-obra');
+  if(dfco){ const v=dfco.value; dfco.innerHTML='<option value="">Todas</option>'+OBRAS.map(o=>`<option>${o}</option>`).join(''); dfco.value=v; }
+
+  const d = getDashFilt();
+  const tot=d.length, pend=d.filter(r=>r.status==='Pendente').length;
+  const fin=d.filter(r=>r.status==='Finalizada').length, late=d.filter(r=>isLate(r)).length;
+  const plan=d.filter(r=>r.tipo==='Planejado').length, urg=d.filter(r=>r.tipo==='Urgente').length;
   document.getElementById('dash-cards').innerHTML=`
     <div class="sc c1"><div class="sc-lbl">Total</div><div class="sc-val">${tot}</div><div class="sc-sub">requisições</div></div>
     <div class="sc c2"><div class="sc-lbl">Pendentes</div><div class="sc-val">${pend}</div><div class="sc-sub">aguardando ação</div></div>
@@ -772,17 +837,17 @@ function renderDash() {
     <div class="sc c5"><div class="sc-lbl">Planejadas</div><div class="sc-val">${plan}</div><div class="sc-sub">${tot?Math.round(plan/tot*100):0}% do total</div></div>
     <div class="sc c6"><div class="sc-lbl">Urgentes</div><div class="sc-val">${urg}</div><div class="sc-sub">${tot?Math.round(urg/tot*100):0}% do total</div></div>`;
 
-  const urgRows=reqs.filter(r=>r.tipo==='Urgente'||isLate(r)).slice(0,6);
+  const urgRows=d.filter(r=>r.tipo==='Urgente'||isLate(r)).slice(0,6);
   document.getElementById('tb-urg').innerHTML=urgRows.length
     ? urgRows.map(r=>`<tr><td class="rid">${r.id}</td><td style="font-size:12px">${r.obra}</td><td style="font-size:12px">${r.mat}</td><td style="font-size:12px">${r.comp}</td><td>${sbadge(r.status)}</td></tr>`).join('')
     : '<tr><td colspan="5" class="empty"><div class="eico">🎉</div>Nenhuma urgência</td></tr>';
 
-  const sp=reqs.filter(r=>!r.prazo&&r.status!=='Finalizada').slice(0,5);
+  const sp=d.filter(r=>!r.prazo&&r.status!=='Finalizada').slice(0,5);
   document.getElementById('tb-sp').innerHTML=sp.length
     ? sp.map(r=>`<tr><td class="rid">${r.id}</td><td style="font-size:12px">${r.obra}</td><td style="font-size:12px">${r.mat}</td><td>${tbadge(r.tipo)}</td></tr>`).join('')
     : '<tr><td colspan="4" class="empty"><div class="eico">✅</div>Todas com prazo</td></tr>';
 
-  document.getElementById('tb-dash').innerHTML=[...reqs].reverse().slice(0,8).map(r=>`<tr>
+  document.getElementById('tb-dash').innerHTML=[...d].reverse().slice(0,8).map(r=>`<tr>
     <td class="rid">${r.id}</td>
     <td class="nwrap" style="font-size:12px">${fmt(r.dtab)}</td>
     <td style="font-size:12px;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.obra}</td>
@@ -795,9 +860,9 @@ function renderDash() {
   </tr>`).join('');
 
   // ── Dashboard: Contatos ──
-  // obras sem contato há mais de 3 dias (ou nunca)
+  const ctFiltrados = getDashCtFilt();
   const obraMap = {};
-  contatos.forEach(c=>{ if(!obraMap[c.obra]||c.dt>obraMap[c.obra].dt) obraMap[c.obra]=c; });
+  ctFiltrados.forEach(c=>{ if(!obraMap[c.obra]||c.dt>obraMap[c.obra].dt) obraMap[c.obra]=c; });
   const semContato = OBRAS.map(o=>{
     const last = obraMap[o];
     const dias = last ? Math.floor((new Date()-new Date(last.dt))/86400000) : null;
@@ -827,12 +892,12 @@ function renderDash() {
       const d = new Date(hoje); d.setDate(d.getDate()-i);
       const key = d.toISOString().slice(0,10);
       const dia = d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'});
-      const count = contatos.filter(c=>c.dt.slice(0,10)===key).length;
+      const count = ctFiltrados.filter(c=>c.dt.slice(0,10)===key).length;
       ultimos7.push({dia,count,key,isToday:i===0});
     }
     const max = Math.max(...ultimos7.map(x=>x.count),1);
     const totalSemana = ultimos7.reduce((s,x)=>s+x.count,0);
-    const proximos = contatos.filter(c=>c.prox&&c.prox>=hoje.toISOString().slice(0,10)).sort((a,b)=>a.prox.localeCompare(b.prox)).slice(0,3);
+    const proximos = ctFiltrados.filter(c=>c.prox&&c.prox>=hoje.toISOString().slice(0,10)).sort((a,b)=>a.prox.localeCompare(b.prox)).slice(0,3);
 
     semanaEl.innerHTML = `
       <div style="font-size:11px;color:var(--mut2);margin-bottom:10px">${totalSemana} contato(s) nos últimos 7 dias</div>
