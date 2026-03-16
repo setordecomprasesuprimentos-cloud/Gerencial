@@ -175,6 +175,10 @@ select option{background:#222}
     </button>
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
     <button class="btn btn-export" onclick="exportCSV()">CSV</button>
+    <label class="btn btn-export" style="cursor:pointer;border-color:#00e676;color:#00e676" title="Importar CSV e atualizar Firebase">
+      📥 Importar CSV
+      <input type="file" id="importCSVFile" accept=".csv" style="display:none" onchange="handleImportCSV(event)">
+    </label>
   </div>
 </header>
 
@@ -979,6 +983,83 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 
 // Auto-sync on page load
+window.handleImportCSV = async function handleImportCSV(evt) {
+  var file = evt.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      var text = e.target.result;
+      // Remove BOM se existir
+      text = text.replace(/^﻿/, '');
+      var lines = text.trim().split('\n');
+      var header = lines[0].split(';').map(function(h){ return h.trim(); });
+      var rows = lines.slice(1).map(function(line){
+        var vals = line.split(';');
+        var obj = {};
+        header.forEach(function(h, i){ obj[h] = (vals[i]||'').trim(); });
+        return obj;
+      }).filter(function(r){ return r.Codigo; });
+
+      var mat = [];
+      var his = [];
+      var dataHora = new Date().toLocaleDateString('pt-BR') + ' 08:00';
+
+      rows.forEach(function(row) {
+        var entradas = parseInt(row.Entradas) || 0;
+        var saidas = parseInt(row.Saidas) || 0;
+        mat.push({
+          codigo: row.Codigo,
+          nome: row.Material,
+          unidade: row.Unidade,
+          minimo: parseFloat(row.Minimo) || 0
+        });
+        if (entradas > 0) {
+          his.push({
+            tipo: 'entrada', codigo: row.Codigo, nome: row.Material,
+            unidade: row.Unidade, qtd: entradas, dataHora: dataHora,
+            local: 'centro', fornecedor: 'Importado CSV', doc: '', obra: '',
+            obs: 'Importado via CSV'
+          });
+        }
+        if (saidas > 0) {
+          his.push({
+            tipo: 'saida', codigo: row.Codigo, nome: row.Material,
+            unidade: row.Unidade, qtd: saidas, dataHora: dataHora,
+            local: 'centro', obra: '', doc: '', obs: 'Importado via CSV'
+          });
+        }
+      });
+
+      if (!confirm(mat.length + ' materiais encontrados no CSV.\nSubstituir estoque atual?')) {
+        evt.target.value = ''; return;
+      }
+
+      showToast('⏳ Salvando no Firebase...', 'orange');
+
+      // Salva local
+      localStorage.setItem('estnovo_materiais', JSON.stringify(mat));
+      localStorage.setItem('estnovo_historico', JSON.stringify(his));
+      localStorage.setItem('estnovo_obras', JSON.stringify([]));
+      materiais = mat;
+      historico = his;
+      obras = [];
+
+      // Salva no Firebase
+      await window.fbSave('materiais', mat);
+      await window.fbSave('historico', his);
+      await window.fbSave('obras', []);
+
+      refresh(); renderObras();
+      showToast('✅ ' + mat.length + ' materiais importados e sincronizados!', 'green');
+    } catch(err) {
+      showToast('Erro ao importar CSV: ' + err.message, 'red');
+    }
+    evt.target.value = '';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
 window.addEventListener('load', function() {
   setTimeout(async function() {
     await syncFromFirebase();
