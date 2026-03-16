@@ -1468,8 +1468,8 @@ function getCtFilt() {
 }
 
 function ctStatusBadge(s) {
-  const m = {'Resolvido':'b-fin','Pendente':'b-pend','Aguardando Retorno':'b-pgt','Sem Resposta':'b-late'};
-  return `<span class="badge ${m[s]||'b-pend'}">${s}</span>`;
+  const m = {'Resolvido':'b-fin','Pendente':'b-late','Aguardando Retorno':'b-late','Sem Resposta':'b-late'};
+  return `<span class="badge ${m[s]||'b-late'}">${s}</span>`;
 }
 
 function fmtDt(dt) {
