@@ -10,6 +10,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
+.star-group{display:flex;gap:4px;margin-top:4px}
+.star{font-size:22px;cursor:pointer;color:var(--bor2);transition:color .15s;user-select:none}
+.star.on{color:#f5a623}
 :root {
   --bg:#0c0e14; --sur:#13161f; --sur2:#1a1e2e; --sur3:#1f2438;
   --bor:#252a3d; --bor2:#2e3450;
@@ -153,11 +156,6 @@ input[type=date]{color-scheme:dark}
   main{padding:14px} header{padding:12px 14px} nav{padding:0 12px}
   .cards-grid{grid-template-columns:1fr 1fr}
 }
-
-.star-group { display:flex; gap:4px; margin-top:4px; }
-.star { font-size:22px; cursor:pointer; color:var(--bor2); transition:color .15s; user-select:none; }
-.star.on { color:#f5a623; }
-.star:hover { color:#f5a623; transform:scale(1.1); }
 </style>
 </head>
 <body>
@@ -171,7 +169,7 @@ input[type=date]{color-scheme:dark}
     <div style="display:flex;gap:6px;align-items:center">
       <button class="btn btn-ghost btn-sm" onclick="backupJSON()" title="Salvar backup JSON">💾 JSON</button>
       <button class="btn btn-green btn-sm" onclick="backupExcel()" title="Salvar backup Excel">📊 Excel</button>
-      <label class="btn btn-ghost btn-sm" style="cursor:pointer;border-color:#1ec995;color:#1ec995" title="Importar JSON e sincronizar Firebase">📥 Importar JSON<input type="file" accept=".json" onchange="restaurarJSON(event)" style="display:none"></label>
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer" title="Restaurar backup JSON">📂 Restaurar<input type="file" accept=".json" onchange="restaurarJSON(event)" style="display:none"></label>
       <button class="btn btn-ghost btn-sm" onclick="openModalObras()" title="Gerenciar Obras">🏗 Obras</button>
     </div>
     <div class="gbadge">👩‍💼 Gestora: <span>Wanessa Lopes</span></div>
@@ -191,10 +189,6 @@ input[type=date]{color-scheme:dark}
   <button onclick="showTab('nova')">➕ Nova Requisição</button>
   <button onclick="showTab('contatos')">📞 Contatos com Obras</button>
   <button onclick="showTab('avaliacao')">⭐ Avaliação</button>
-  <button onclick="showTab('avaliacao')">⭐ Avaliação</button>
-  <button onclick="showTab('avaliacao')">⭐ Avaliação</button>
-  <button onclick="showTab('avaliacao')">⭐ Avaliação</button>
-  <button onclick="showTab('avaliacao')">⭐ Avaliação</button>
 </nav>
 
 <main>
@@ -202,28 +196,17 @@ input[type=date]{color-scheme:dark}
 <!-- DASHBOARD -->
 <div class="tab-content active" id="tab-dashboard">
   <div class="stitle">Painel Geral <span class="pill"><span class="dot"></span>TEMPO REAL</span></div>
-  <!-- FILTROS DASHBOARD -->
   <div class="fbar" style="margin-bottom:18px">
     <div class="fg"><label>Obra</label><select id="df-obra" onchange="renderDash()"><option value="">Todas as obras</option></select></div>
     <div class="fg"><label>Comprador</label><select id="df-comp" onchange="renderDash()"><option value="">Todos</option></select></div>
-    <div class="fg"><label>Status</label>
-      <select id="df-status" onchange="renderDash()">
-        <option value="">Todos</option><option>Pendente</option><option>Finalizada</option>
-        <option>Aguardando PGT Cliente</option><option>Aguardando Iniciar Obra</option>
-        <option>Reprovado</option><option>Valor S/BDI Abaixo</option>
-      </select>
-    </div>
-    <div class="fg"><label>Tipo</label>
-      <select id="df-tipo" onchange="renderDash()"><option value="">Todos</option><option>Planejado</option><option>Urgente</option></select>
-    </div>
+    <div class="fg"><label>Status</label><select id="df-status" onchange="renderDash()"><option value="">Todos</option><option>Pendente</option><option>Finalizada</option><option>Aguardando PGT Cliente</option><option>Aguardando Iniciar Obra</option><option>Reprovado</option><option>Valor S/BDI Abaixo</option></select></div>
+    <div class="fg"><label>Tipo</label><select id="df-tipo" onchange="renderDash()"><option value="">Todos</option><option>Planejado</option><option>Urgente</option></select></div>
     <div class="fg"><label>Abertura — De</label><input type="date" id="df-de" onchange="renderDash()"></div>
     <div class="fg"><label>Abertura — Até</label><input type="date" id="df-ate" onchange="renderDash()"></div>
     <div class="fg"><label>Contatos — De</label><input type="date" id="df-ct-de" onchange="renderDash()"></div>
     <div class="fg"><label>Contatos — Até</label><input type="date" id="df-ct-ate" onchange="renderDash()"></div>
     <div class="fg"><label>Contatos — Obra</label><select id="df-ct-obra" onchange="renderDash()"><option value="">Todas</option></select></div>
-    <div style="display:flex;align-items:flex-end;flex-shrink:0">
-      <button class="btn btn-ghost btn-sm" onclick="limparDashF()">✕ Limpar</button>
-    </div>
+    <div style="display:flex;align-items:flex-end;flex-shrink:0"><button class="btn btn-ghost btn-sm" onclick="limparDashF()">✕ Limpar</button></div>
   </div>
   <div class="cards-grid" id="dash-cards"></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
@@ -352,7 +335,7 @@ input[type=date]{color-scheme:dark}
   <div class="twrap" style="padding:24px">
     <div class="fgrid">
       <div class="fg"><label>Nº Requisição <span style="font-size:10px;color:var(--dan)">* obrigatório</span></label>
-        <input type="text" id="nf-id" placeholder="Ex: 1500-2026 ou 1500/01-2026"></div>
+        <input type="text" id="nf-id" placeholder="Ex: 1500-2026"></div>
       <div class="fg"><label>Obra *</label><select id="nf-obra"><option value="">Selecione...</option></select></div>
       <div class="fg"><label>Material / Descrição *</label><input type="text" id="nf-mat" placeholder="Descreva o material ou serviço"></div>
       <div class="fg"><label>Quantidade</label><input type="text" id="nf-qtd" placeholder="Ex: 50 un, 10 m³"></div>
@@ -430,220 +413,10 @@ input[type=date]{color-scheme:dark}
 <!-- AVALIAÇÃO DE DESEMPENHO -->
 <div class="tab-content" id="tab-avaliacao">
   <div class="stitle">⭐ Avaliação de Desempenho <span class="pill green" id="av-pill">0</span></div>
-
-  <!-- Barra de ações -->
-  <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap">
-    <button class="btn btn-primary btn-sm" onclick="openModalAvaliacao()">+ Nova Avaliação</button>
-    <button class="btn btn-green btn-sm" onclick="exportExcelAvaliacao()">⬇ Excel</button>
-    <div class="fg" style="min-width:200px;max-width:300px">
-      <select id="av-f-colab" onchange="renderAvaliacao()" style="background:var(--sur2);border:1px solid var(--bor);border-radius:8px;color:var(--txt);font-family:var(--fb);font-size:13px;padding:8px 12px;outline:none;width:100%">
-        <option value="">Todos os colaboradores</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- Cards de média -->
-  <div class="cards-grid" id="av-cards" style="margin-bottom:20px"></div>
-
-  <!-- Tabela de avaliações -->
-  <div class="twrap"><div class="tscroll">
-    <table><thead><tr>
-      <th>Data</th><th>Colaborador</th><th>Pontualidade</th><th>Postura</th>
-      <th>Comunicação</th><th>Produtividade</th><th>Trabalho em Equipe</th>
-      <th>Média</th><th>Comentários</th><th>Ação</th>
-    </tr></thead><tbody id="tb-avaliacao"></tbody></table>
-  </div></div>
-</div>
-
-<!-- MODAL NOVA AVALIAÇÃO -->
-<div class="modal-ov" id="modal-avaliacao">
-  <div class="modal" style="max-width:620px">
-    <div class="modal-title">
-      ⭐ <span id="av-modal-title">Nova Avaliação</span>
-      <button class="xbtn" onclick="closeModal('modal-avaliacao')">✕</button>
-    </div>
-    <input type="hidden" id="av-edit-id">
-    <div class="fgrid">
-      <div class="fg"><label>Colaborador *</label>
-        <select id="av-colab">
-          <option value="">Selecione...</option>
-        </select>
-      </div>
-      <div class="fg"><label>Data *</label><input type="date" id="av-data"></div>
-    </div>
-
-    <!-- Critérios com estrelas -->
-    <div style="background:var(--sur2);border-radius:10px;padding:16px;margin:14px 0">
-      <div style="font-size:11px;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Critérios de Avaliação</div>
-      <div id="av-criterios">
-        <!-- gerado por JS -->
-      </div>
-    </div>
-
-    <div class="fg" style="margin-bottom:16px">
-      <label>Comentários / Observações</label>
-      <textarea id="av-obs" rows="3" placeholder="Pontos positivos, áreas de melhoria..."></textarea>
-    </div>
-    <div style="display:flex;gap:10px;align-items:center">
-      <button class="btn btn-primary" onclick="salvarAvaliacao()">💾 Salvar Avaliação</button>
-      <button class="btn btn-ghost" onclick="closeModal('modal-avaliacao')">Cancelar</button>
-      <span id="av-msg" style="font-size:12px"></span>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL CADASTRAR COLABORADOR -->
-<div class="modal-ov" id="modal-av-colab">
-  <div class="modal" style="max-width:400px">
-    <div class="modal-title">👤 Novo Colaborador <button class="xbtn" onclick="closeModal('modal-av-colab')">✕</button></div>
-    <div class="fg" style="margin-bottom:14px"><label>Nome *</label><input type="text" id="av-nc-nome" placeholder="Nome completo"></div>
-    <div class="fg" style="margin-bottom:14px"><label>Cargo / Função</label><input type="text" id="av-nc-cargo" placeholder="Ex: Pedreiro, Eletricista..."></div>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-primary" onclick="salvarColabAv()">💾 Salvar</button>
-      <button class="btn btn-ghost" onclick="closeModal('modal-av-colab')">Cancelar</button>
-    </div>
-    <div id="av-nc-msg" style="font-size:12px;margin-top:8px"></div>
-  </div>
-</div>
-
-
-<!-- AVALIAÇÃO DE DESEMPENHO -->
-<div class="tab-content" id="tab-avaliacao">
-  <div class="stitle">⭐ Avaliação de Desempenho <span class="pill green" id="av-pill">0</span></div>
-
-  <!-- Barra de ações -->
-  <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap">
-    <button class="btn btn-primary btn-sm" onclick="openModalAvaliacao()">+ Nova Avaliação</button>
-    <button class="btn btn-green btn-sm" onclick="exportExcelAvaliacao()">📊 Exportar Excel</button>
-    <div class="fg" style="min-width:200px">
-      <select id="av-f-colab" onchange="renderAvaliacao()" style="font-size:12px;padding:7px 10px">
-        <option value="">Todos os colaboradores</option>
-      </select>
-    </div>
-    <div class="fg" style="min-width:160px">
-      <select id="av-f-periodo" onchange="renderAvaliacao()" style="font-size:12px;padding:7px 10px">
-        <option value="">Todos os períodos</option>
-      </select>
-    </div>
-    <button class="btn btn-ghost btn-sm" onclick="limparAvFiltros()">✕ Limpar</button>
-  </div>
-
-  <!-- Cards resumo -->
-  <div class="cards-grid" id="av-cards" style="margin-bottom:20px"></div>
-
-  <!-- Tabela -->
-  <div class="twrap"><div class="tscroll">
-    <table><thead><tr>
-      <th>Data</th><th>Colaborador</th><th>Período</th>
-      <th style="text-align:center">Pontualidade</th>
-      <th style="text-align:center">Postura</th>
-      <th style="text-align:center">Comunicação</th>
-      <th style="text-align:center">Proatividade</th>
-      <th style="text-align:center">Qualidade</th>
-      <th style="text-align:center">Média</th>
-      <th>Comentários</th><th>Ações</th>
-    </tr></thead><tbody id="tb-avaliacao"></tbody></table>
-  </div></div>
-
-  <!-- Ranking -->
-  <div class="twrap" style="margin-top:20px">
-    <div class="twrap-hd"><h3>🏆 Ranking de Desempenho</h3></div>
-    <div id="av-ranking" style="padding:16px"></div>
-  </div>
-</div>
-<!-- AVALIAÇÃO DE DESEMPENHO -->
-<div class="tab-content" id="tab-avaliacao">
-  <div class="stitle">Avaliação de Desempenho <span class="pill green" id="av-pill">0</span></div>
-
-  <!-- Adicionar colaborador -->
-  <div class="twrap" style="padding:20px;margin-bottom:18px">
-    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-      <div class="fg" style="flex:2;min-width:180px">
-        <label style="font-size:10.5px;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block">Nome do Colaborador</label>
-        <input type="text" id="av-nome" placeholder="Ex: João Silva" onkeydown="if(event.key==='Enter')adicionarAvaliado()">
-      </div>
-      <div class="fg" style="flex:1;min-width:150px">
-        <label style="font-size:10.5px;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block">Cargo / Função</label>
-        <input type="text" id="av-cargo" placeholder="Ex: Pedreiro">
-      </div>
-      <div class="fg" style="flex:1;min-width:150px">
-        <label style="font-size:10.5px;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block">Obra</label>
-        <select id="av-obra"><option value="">Selecione...</option></select>
-      </div>
-      <button class="btn btn-primary" onclick="adicionarAvaliado()">+ Adicionar</button>
-    </div>
-    <div id="av-msg" style="font-size:12px;margin-top:8px"></div>
-  </div>
-
-  <!-- Tabela de avaliações -->
-  <div class="twrap"><div class="tscroll">
-    <table>
-      <thead><tr>
-        <th>Nome</th><th>Cargo</th><th>Obra</th>
-        <th style="text-align:center">Pontualidade</th>
-        <th style="text-align:center">Postura</th>
-        <th style="text-align:center">Comunicação</th>
-        <th style="text-align:center">Produtividade</th>
-        <th style="text-align:center">Média</th>
-        <th>Comentários</th>
-        <th style="text-align:center">Ações</th>
-      </tr></thead>
-      <tbody id="tb-avaliacao"></tbody>
-    </table>
-  </div></div>
-
-  <!-- Resumo -->
-  <div class="cards-grid" style="margin-top:18px" id="av-cards"></div>
-</div>
-
-
-<!-- AVALIAÇÃO DE DESEMPENHO -->
-<div class="tab-content" id="tab-avaliacao">
-  <div class="stitle">⭐ Avaliação de Desempenho <span class="pill" id="av-pill">0</span></div>
-
-  <!-- Barra de ações -->
-  <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap">
-    <button class="btn btn-primary btn-sm" onclick="openModalAvaliacao()">+ Novo Colaborador</button>
-    <button class="btn btn-green btn-sm" onclick="exportExcelAv()">📊 Exportar Excel</button>
-    <span style="font-size:12px;color:var(--mut2)" id="av-count"></span>
-  </div>
-
-  <!-- Cards dos colaboradores -->
-  <div id="av-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin-bottom:22px"></div>
-
-  <!-- Tabela resumo -->
-  <div class="twrap">
-    <div class="twrap-hd"><h3>📋 Resumo das Avaliações</h3></div>
-    <div class="tscroll">
-      <table><thead><tr>
-        <th>Colaborador</th>
-        <th style="text-align:center">Pontualidade</th>
-        <th style="text-align:center">Postura</th>
-        <th style="text-align:center">Comunicação</th>
-        <th style="text-align:center">Proatividade</th>
-        <th style="text-align:center">Trabalho em Equipe</th>
-        <th style="text-align:center">Média</th>
-        <th>Comentários</th>
-        <th>Ações</th>
-      </tr></thead>
-      <tbody id="tb-av"></tbody>
-    </table></div>
-  </div>
-</div>
-
-
-<!-- AVALIAÇÃO DE DESEMPENHO -->
-<div class="tab-content" id="tab-avaliacao">
-  <div class="stitle">⭐ Avaliação de Desempenho <span class="pill green" id="av-pill">0</span></div>
-
-  <!-- Ações -->
   <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap">
     <button class="btn btn-primary btn-sm" onclick="openModalColaborador()">+ Novo Colaborador</button>
     <button class="btn btn-green btn-sm" onclick="exportExcelAv()">📊 Exportar Excel</button>
-    <span style="font-size:12px;color:var(--mut2)" id="av-count"></span>
   </div>
-
-  <!-- Tabela -->
   <div class="twrap"><div class="tscroll">
     <table><thead><tr>
       <th>Nome</th><th>Cargo</th>
@@ -652,47 +425,15 @@ input[type=date]{color-scheme:dark}
       <th style="text-align:center">Comunicação</th>
       <th style="text-align:center">Produtividade</th>
       <th style="text-align:center">Média</th>
-      <th>Comentários</th>
-      <th style="text-align:center">Ações</th>
+      <th>Comentários</th><th>Ações</th>
     </tr></thead><tbody id="tb-av"></tbody></table>
   </div></div>
-
-  <!-- Histórico de avaliações -->
   <div class="twrap" style="margin-top:20px">
     <div class="twrap-hd"><h3>📊 Ranking de Desempenho</h3></div>
     <div id="av-ranking" style="padding:16px"></div>
   </div>
 </div>
-
 </main>
-
-<!-- MODAL AVALIAÇÃO -->
-<div class="modal-ov" id="modal-av">
-  <div class="modal" style="max-width:620px">
-    <div class="modal-title">
-      <span id="av-modal-title">⭐ Novo Colaborador</span>
-      <button class="xbtn" onclick="closeModal('modal-av')">✕</button>
-    </div>
-    <input type="hidden" id="av-edit-id">
-    <div class="fgrid">
-      <div class="fg" style="grid-column:1/-1"><label>Nome do Colaborador *</label><input type="text" id="av-nome" placeholder="Nome completo"></div>
-      <div class="fg"><label>Cargo / Função</label><input type="text" id="av-cargo" placeholder="Ex: Pedreiro, Mestre de obras..."></div>
-      <div class="fg"><label>Obra</label><select id="av-obra"><option value="">Selecione...</option></select></div>
-    </div>
-    <div style="margin:16px 0;background:var(--sur2);border-radius:10px;padding:16px">
-      <div style="font-size:11px;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;font-weight:600">Critérios de Avaliação</div>
-      <div id="av-criterios" style="display:flex;flex-direction:column;gap:12px"></div>
-    </div>
-    <div class="fg" style="margin-bottom:16px"><label>Comentários / Observações</label>
-      <textarea id="av-obs" rows="3" placeholder="Pontos fortes, melhorias, observações gerais..."></textarea>
-    </div>
-    <div style="display:flex;gap:10px;align-items:center">
-      <button class="btn btn-primary" onclick="salvarAvaliacao()">💾 Salvar</button>
-      <button class="btn btn-ghost" onclick="closeModal('modal-av')">Cancelar</button>
-      <span id="av-msg" style="font-size:12px"></span>
-    </div>
-  </div>
-</div>
 
 <!-- MODAL NOVO COMPRADOR -->
 <div class="modal-ov" id="modal-comp">
@@ -845,61 +586,24 @@ input[type=date]{color-scheme:dark}
   </div>
 </div>
 
-<!-- MODAL AVALIAÇÃO -->
-<div class="modal-ov" id="modal-avaliacao">
-  <div class="modal" style="max-width:620px">
-    <div class="modal-title">
-      ⭐ <span id="av-modal-title">Nova Avaliação</span>
-      <button class="xbtn" onclick="closeModal('modal-avaliacao')">✕</button>
-    </div>
-    <input type="hidden" id="av-edit-id">
-    <div class="fgrid">
-      <div class="fg"><label>Colaborador *</label><input type="text" id="av-colab" placeholder="Nome do colaborador"></div>
-      <div class="fg"><label>Período *</label><input type="text" id="av-periodo" placeholder="Ex: Mar/2026, 1º Trim 2026"></div>
-      <div class="fg"><label>Avaliador</label><input type="text" id="av-avaliador" placeholder="Quem está avaliando"></div>
-      <div class="fg"><label>Data *</label><input type="date" id="av-data"></div>
-    </div>
-
-    <div style="background:var(--sur2);border-radius:10px;padding:16px;margin:14px 0">
-      <div style="font-size:11px;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Critérios de Avaliação — clique nas estrelas</div>
-      <div id="av-criterios-form"></div>
-    </div>
-
-    <div class="fg" style="margin-bottom:16px">
-      <label>Comentários / Observações</label>
-      <textarea id="av-comentarios" rows="3" placeholder="Pontos fortes, pontos a melhorar, metas..."></textarea>
-    </div>
-    <div style="display:flex;gap:10px;align-items:center">
-      <button class="btn btn-primary" onclick="salvarAvaliacao()">💾 Salvar Avaliação</button>
-      <button class="btn btn-ghost" onclick="closeModal('modal-avaliacao')">Cancelar</button>
-      <span id="av-msg" style="font-size:12px"></span>
-    </div>
-  </div>
-</div>
-
 
 <!-- MODAL COLABORADOR -->
 <div class="modal-ov" id="modal-colaborador">
   <div class="modal" style="max-width:500px">
-    <div class="modal-title">
-      <span id="mc-title">Novo Colaborador</span>
-      <button class="xbtn" onclick="closeModal('modal-colaborador')">✕</button>
-    </div>
+    <div class="modal-title"><span id="mc-title">Novo Colaborador</span><button class="xbtn" onclick="closeModal('modal-colaborador')">✕</button></div>
     <input type="hidden" id="mc-edit-id">
     <div class="fgrid">
       <div class="fg"><label>Nome *</label><input type="text" id="mc-nome" placeholder="Nome completo"></div>
-      <div class="fg"><label>Cargo</label><input type="text" id="mc-cargo" placeholder="Ex: Pedreiro, Encarregado..."></div>
+      <div class="fg"><label>Cargo</label><input type="text" id="mc-cargo" placeholder="Ex: Pedreiro..."></div>
     </div>
     <div style="margin:16px 0 8px;font-size:11px;font-weight:700;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px">Avaliação (1 a 5 ⭐)</div>
     <div class="fgrid">
-      <div class="fg"><label>Pontualidade</label><div id="stars-pont" class="star-group" data-field="pont"></div><input type="hidden" id="mc-pont" value="0"></div>
-      <div class="fg"><label>Postura</label><div id="stars-post" class="star-group" data-field="post"></div><input type="hidden" id="mc-post" value="0"></div>
-      <div class="fg"><label>Comunicação</label><div id="stars-com" class="star-group" data-field="com"></div><input type="hidden" id="mc-com" value="0"></div>
-      <div class="fg"><label>Produtividade</label><div id="stars-prod" class="star-group" data-field="prod"></div><input type="hidden" id="mc-prod" value="0"></div>
+      <div class="fg"><label>Pontualidade</label><div id="stars-pont" class="star-group"></div><input type="hidden" id="mc-pont" value="0"></div>
+      <div class="fg"><label>Postura</label><div id="stars-post" class="star-group"></div><input type="hidden" id="mc-post" value="0"></div>
+      <div class="fg"><label>Comunicação</label><div id="stars-com" class="star-group"></div><input type="hidden" id="mc-com" value="0"></div>
+      <div class="fg"><label>Produtividade</label><div id="stars-prod" class="star-group"></div><input type="hidden" id="mc-prod" value="0"></div>
     </div>
-    <div class="fg" style="margin-top:12px"><label>Comentários</label>
-      <textarea id="mc-obs" rows="3" placeholder="Observações sobre o colaborador..."></textarea>
-    </div>
+    <div class="fg" style="margin-top:12px"><label>Comentários</label><textarea id="mc-obs" rows="3" placeholder="Observações..."></textarea></div>
     <div style="display:flex;gap:10px;margin-top:16px;align-items:center">
       <button class="btn btn-primary" onclick="salvarColaborador()">💾 Salvar</button>
       <button class="btn btn-ghost" onclick="closeModal('modal-colaborador')">Cancelar</button>
@@ -907,7 +611,6 @@ input[type=date]{color-scheme:dark}
     </div>
   </div>
 </div>
-
 <script>
 // ── FIREBASE CONFIG ──────────────────────────────────────────
 const firebaseConfig = {
@@ -1005,11 +708,9 @@ async function initFirebase() {
         contatos = snap.data().list;
         localStorage.setItem('contatos_v1', JSON.stringify(contatos));
         if (document.getElementById('tab-contatos').classList.contains('active')) renderContatos();
-        renderDash();
       }
     });
 
-    // Listener em tempo real para colaboradores
     db.collection('dados').doc('colaboradores').onSnapshot(snap => {
       if (snap.exists && snap.data().list && snap.data().list.length > 0) {
         colaboradores = snap.data().list;
@@ -1017,7 +718,6 @@ async function initFirebase() {
         if (document.getElementById('tab-avaliacao').classList.contains('active')) renderAvaliacao();
       }
     });
-
     // Listener em tempo real para obras e compradores
     db.collection('config').doc('obras').onSnapshot(snap => {
       if (snap.exists && snap.data().list?.length) {
@@ -1035,19 +735,9 @@ async function initFirebase() {
       }
     });
 
-    // Listener avaliados
-    db.collection('dados').doc('avaliados').onSnapshot(snap => {
-      if (snap.exists && snap.data().list) {
-        avaliados = snap.data().list;
-        localStorage.setItem('av_v1', JSON.stringify(avaliados));
-        if (document.getElementById('tab-avaliacao').classList.contains('active')) renderAvaliacao();
-      }
-    });
-
     _dbReady = true;
     setSyncStatus('ok');
-    await loadColaboradores();
-    renderAvaliacao();
+    await loadColaboradores(); renderAvaliacao();
 
     // Se Firebase estiver vazio, faz seed inicial e sobe
     if (!reqs.length) {
@@ -1059,7 +749,6 @@ async function initFirebase() {
         initSeed();
       }
     }
-    // Sempre verifica Firebase antes de usar localStorage para contatos
     const snapCts = await db.collection('dados').doc('contatos').get();
     const fbContatos = snapCts.exists && snapCts.data().list ? snapCts.data().list : [];
     if (fbContatos.length === 0) {
@@ -1075,7 +764,6 @@ async function initFirebase() {
     setSyncStatus('offline');
     reqs = JSON.parse(localStorage.getItem('reqs_v3') || '[]');
     contatos = JSON.parse(localStorage.getItem('contatos_v1') || '[]');
-    avaliados = JSON.parse(localStorage.getItem('av_v1') || '[]');
     initSeed();
     populaSelects();
     renderDash();
@@ -1096,9 +784,7 @@ function initSeed() {
   reqs = raw.map(r => ({ id:'REQ-'+String(seq++).padStart(3,'0'), ...r }));
   save(); populaSelects(); renderDash();
 }
-function nextId() {
-  return ''; // Usuário deve inserir o número manualmente
-}
+function nextId() { return ''; }
 function fmt(d) { if(!d) return '—'; const p=d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
 function isLate(r) { return r.status!=='Finalizada' && r.prazo && new Date(r.prazo+'T23:59:59')<new Date(); }
 
@@ -1120,7 +806,7 @@ setInterval(updClock,1000); updClock();
 
 // ── POPULA SELECTS ────────────────────────────────────────────
 function populaSelects() {
-  ['f-obra','fa-obra','nf-obra','av-obra'].forEach(id => {
+  ['f-obra','fa-obra','nf-obra'].forEach(id => {
     const el=document.getElementById(id); if(!el) return;
     const def = id==='nf-obra' ? '<option value="">Selecione...</option>' : '<option value="">Todas as obras</option>';
     el.innerHTML = def + OBRAS.map(o=>`<option>${o}</option>`).join('');
@@ -1146,49 +832,42 @@ function showTab(id) {
 
 // ── DASHBOARD ─────────────────────────────────────────────────
 function getDashFilt() {
-  const fo = document.getElementById('df-obra')?.value||'';
-  const fc = document.getElementById('df-comp')?.value||'';
-  const fs = document.getElementById('df-status')?.value||'';
-  const ft = document.getElementById('df-tipo')?.value||'';
-  const fde= document.getElementById('df-de')?.value||'';
-  const fat= document.getElementById('df-ate')?.value||'';
+  const fo=document.getElementById('df-obra')?.value||'';
+  const fc=document.getElementById('df-comp')?.value||'';
+  const fs=document.getElementById('df-status')?.value||'';
+  const ft=document.getElementById('df-tipo')?.value||'';
+  const fde=document.getElementById('df-de')?.value||'';
+  const fat=document.getElementById('df-ate')?.value||'';
   return reqs.filter(r=>{
-    if(fo && r.obra!==fo) return false;
-    if(fc && r.comp!==fc) return false;
-    if(fs && r.status!==fs) return false;
-    if(ft && r.tipo!==ft) return false;
-    if(fde && r.dtab<fde) return false;
-    if(fat && r.dtab>fat) return false;
+    if(fo&&r.obra!==fo) return false;
+    if(fc&&r.comp!==fc) return false;
+    if(fs&&r.status!==fs) return false;
+    if(ft&&r.tipo!==ft) return false;
+    if(fde&&r.dtab<fde) return false;
+    if(fat&&r.dtab>fat) return false;
     return true;
   });
 }
 function getDashCtFilt() {
-  const fo = document.getElementById('df-ct-obra')?.value||'';
-  const fde= document.getElementById('df-ct-de')?.value||'';
-  const fat= document.getElementById('df-ct-ate')?.value||'';
+  const fo=document.getElementById('df-ct-obra')?.value||'';
+  const fde=document.getElementById('df-ct-de')?.value||'';
+  const fat=document.getElementById('df-ct-ate')?.value||'';
   return contatos.filter(c=>{
-    if(fo && c.obra!==fo) return false;
-    if(fde && c.dt.slice(0,10)<fde) return false;
-    if(fat && c.dt.slice(0,10)>fat) return false;
+    if(fo&&c.obra!==fo) return false;
+    if(fde&&c.dt.slice(0,10)<fde) return false;
+    if(fat&&c.dt.slice(0,10)>fat) return false;
     return true;
   });
 }
 function limparDashF() {
-  ['df-obra','df-comp','df-status','df-tipo','df-de','df-ate','df-ct-de','df-ct-ate','df-ct-obra'].forEach(id=>{
-    const e=document.getElementById(id); if(e) e.value='';
-  });
+  ['df-obra','df-comp','df-status','df-tipo','df-de','df-ate','df-ct-de','df-ct-ate','df-ct-obra'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   renderDash();
 }
 function renderDash() {
-  // Popula selects dos filtros do dashboard
-  const dfo=document.getElementById('df-obra');
-  if(dfo){ const v=dfo.value; dfo.innerHTML='<option value="">Todas as obras</option>'+OBRAS.map(o=>`<option>${o}</option>`).join(''); dfo.value=v; }
-  const dfc=document.getElementById('df-comp');
-  if(dfc){ const v=dfc.value; dfc.innerHTML='<option value="">Todos</option>'+COMPS.map(c=>`<option>${c}</option>`).join(''); dfc.value=v; }
-  const dfco=document.getElementById('df-ct-obra');
-  if(dfco){ const v=dfco.value; dfco.innerHTML='<option value="">Todas</option>'+OBRAS.map(o=>`<option>${o}</option>`).join(''); dfco.value=v; }
-
-  const d = getDashFilt();
+  const dfo=document.getElementById('df-obra'); if(dfo){const v=dfo.value;dfo.innerHTML='<option value="">Todas as obras</option>'+OBRAS.map(o=>`<option>${o}</option>`).join('');dfo.value=v;}
+  const dfc=document.getElementById('df-comp'); if(dfc){const v=dfc.value;dfc.innerHTML='<option value="">Todos</option>'+COMPS.map(c=>`<option>${c}</option>`).join('');dfc.value=v;}
+  const dfco=document.getElementById('df-ct-obra'); if(dfco){const v=dfco.value;dfco.innerHTML='<option value="">Todas</option>'+OBRAS.map(o=>`<option>${o}</option>`).join('');dfco.value=v;}
+  const d=getDashFilt();
   const tot=d.length, pend=d.filter(r=>r.status==='Pendente').length;
   const fin=d.filter(r=>r.status==='Finalizada').length, late=d.filter(r=>isLate(r)).length;
   const plan=d.filter(r=>r.tipo==='Planejado').length, urg=d.filter(r=>r.tipo==='Urgente').length;
@@ -1223,7 +902,7 @@ function renderDash() {
   </tr>`).join('');
 
   // ── Dashboard: Contatos ──
-  const ctFiltrados = getDashCtFilt();
+  const ctFiltrados=getDashCtFilt();
   const obraMap = {};
   ctFiltrados.forEach(c=>{ if(!obraMap[c.obra]||c.dt>obraMap[c.obra].dt) obraMap[c.obra]=c; });
   const semContato = OBRAS.map(o=>{
@@ -1729,14 +1408,9 @@ function salvarReq() {
 
   // handle manual ID
   let idRaw = (document.getElementById('nf-id')?.value||'').trim();
-  if (!idRaw) {
-    msg.style.color='var(--dan)'; msg.textContent='⚠ Informe o Nº da Requisição.'; return;
-  }
-  // Usa exatamente o que o usuário digitou, sem adicionar prefixo
+  if (!idRaw) { msg.style.color='var(--dan)'; msg.textContent='⚠ Informe o Nº da Requisição.'; return; }
   let id = idRaw;
-  if (reqs.find(x=>x.id===id)) {
-    msg.style.color='var(--dan)'; msg.textContent=`⚠ Nº ${id} já existe. Escolha outro.`; return;
-  }
+  if (reqs.find(x=>x.id===id)) { msg.style.color='var(--dan)'; msg.textContent=`⚠ Nº ${id} já existe.`; return; }
 
   const r={
     id,obra,mat,qtd:document.getElementById('nf-qtd').value,
@@ -2158,7 +1832,7 @@ function restaurarJSON(event) {
       if (!data.reqs || !Array.isArray(data.reqs)) {
         alert('❌ Arquivo inválido.'); return;
       }
-      if (!confirm(`Importar backup JSON?\n\n• ${data.reqs.length} requisições\n• ${(data.contatos||[]).length} contatos\n• ${(data.obras||[]).length} obras\n\n⚠ Os dados atuais serão substituídos e sincronizados em todos os dispositivos.`)) return;
+      if (!confirm(`Restaurar backup?\n\n• ${data.reqs.length} requisições\n• ${(data.contatos||[]).length} contatos\n\n⚠ Os dados atuais serão substituídos.`)) return;
 
       setSyncStatus('saving');
 
@@ -2185,7 +1859,7 @@ function restaurarJSON(event) {
           db.collection('config').doc('comps').set({ list: COMPS })
         ]);
         setSyncStatus('ok');
-        alert('✅ ' + reqs.length + ' requisições e ' + contatos.length + ' contatos importados!\n🌐 Todos os dispositivos estão atualizados.');
+        alert('✅ Backup restaurado e sincronizado!\nTodos os dispositivos verão os dados agora.');
       } catch(fbErr) {
         setSyncStatus('error');
         alert('✅ Dados restaurados localmente!\n⚠ Erro ao sincronizar com Firebase. Verifique sua conexão.');
@@ -2206,11 +1880,8 @@ function saveColaboradores() {
   localStorage.setItem('av_colab_v1', JSON.stringify(colaboradores));
   setSyncStatus('saving');
   db.collection('dados').doc('colaboradores').set({ list: colaboradores })
-    .then(()=>setSyncStatus('ok'))
-    .catch(()=>setSyncStatus('error'));
+    .then(()=>setSyncStatus('ok')).catch(()=>setSyncStatus('error'));
 }
-
-// Carregar colaboradores do Firebase no init
 async function loadColaboradores() {
   try {
     const snap = await db.collection('dados').doc('colaboradores').get();
@@ -2220,141 +1891,96 @@ async function loadColaboradores() {
     }
   } catch(e) {}
 }
-
 function openModalColaborador(id) {
   const c = id ? colaboradores.find(x=>x.id===id) : null;
   document.getElementById('mc-edit-id').value = id||'';
   document.getElementById('mc-title').textContent = c ? 'Editar Colaborador' : 'Novo Colaborador';
   document.getElementById('mc-nome').value = c ? c.nome : '';
   document.getElementById('mc-cargo').value = c ? (c.cargo||'') : '';
-  document.getElementById('mc-pont').value = c ? (c.pont||0) : 0;
-  document.getElementById('mc-post').value = c ? (c.post||0) : 0;
-  document.getElementById('mc-com').value = c ? (c.com||0) : 0;
-  document.getElementById('mc-prod').value = c ? (c.prod||0) : 0;
   document.getElementById('mc-obs').value = c ? (c.obs||'') : '';
-  document.getElementById('mc-msg').textContent = '';
-  renderStars('pont', c ? c.pont||0 : 0);
-  renderStars('post', c ? c.post||0 : 0);
-  renderStars('com', c ? c.com||0 : 0);
-  renderStars('prod', c ? c.prod||0 : 0);
+  ['pont','post','com','prod'].forEach(f=>{ document.getElementById('mc-'+f).value = c?(c[f]||0):0; renderStars(f,c?(c[f]||0):0); });
+  document.getElementById('mc-msg').textContent='';
   document.getElementById('modal-colaborador').classList.add('open');
 }
-
 function renderStars(field, val) {
-  const map = {pont:'stars-pont', post:'stars-post', com:'stars-com', prod:'stars-prod'};
-  const el = document.getElementById(map[field]);
-  if (!el) return;
-  el.innerHTML = [1,2,3,4,5].map(i =>
-    `<span class="star ${i<=val?'on':''}" onclick="setStar('${field}',${i})" onmouseover="hoverStar('${field}',${i})" onmouseout="renderStars('${field}',parseInt(document.getElementById('mc-${field}').value)||0)">★</span>`
-  ).join('');
+  const map={pont:'stars-pont',post:'stars-post',com:'stars-com',prod:'stars-prod'};
+  const el=document.getElementById(map[field]); if(!el) return;
+  el.innerHTML=[1,2,3,4,5].map(i=>`<span class="star ${i<=val?'on':''}" onclick="setStar('${field}',${i})" onmouseover="hoverStar('${field}',${i})" onmouseout="renderStars('${field}',parseInt(document.getElementById('mc-${field}').value)||0)">★</span>`).join('');
 }
-
-function setStar(field, val) {
-  document.getElementById('mc-'+field).value = val;
-  renderStars(field, val);
+function setStar(field,val){ document.getElementById('mc-'+field).value=val; renderStars(field,val); }
+function hoverStar(field,val){
+  const map={pont:'stars-pont',post:'stars-post',com:'stars-com',prod:'stars-prod'};
+  document.getElementById(map[field]).querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('on',i<val));
 }
-function hoverStar(field, val) {
-  const map = {pont:'stars-pont', post:'stars-post', com:'stars-com', prod:'stars-prod'};
-  document.getElementById(map[field]).querySelectorAll('.star').forEach((s,i)=>{
-    s.classList.toggle('on', i<val);
-  });
-}
-
 function salvarColaborador() {
-  const nome = document.getElementById('mc-nome').value.trim();
-  const msg = document.getElementById('mc-msg');
-  if (!nome) { msg.style.color='var(--dan)'; msg.textContent='⚠ Informe o nome.'; return; }
-  const pont = parseInt(document.getElementById('mc-pont').value)||0;
-  const post = parseInt(document.getElementById('mc-post').value)||0;
-  const com  = parseInt(document.getElementById('mc-com').value)||0;
-  const prod = parseInt(document.getElementById('mc-prod').value)||0;
-  const media = ((pont+post+com+prod)/4).toFixed(1);
-  const editId = document.getElementById('mc-edit-id').value;
-  if (editId) {
-    const idx = colaboradores.findIndex(x=>x.id===editId);
-    colaboradores[idx] = {...colaboradores[idx], nome, cargo:document.getElementById('mc-cargo').value.trim(), pont, post, com, prod, media:parseFloat(media), obs:document.getElementById('mc-obs').value.trim(), updAt:new Date().toISOString()};
+  const nome=document.getElementById('mc-nome').value.trim();
+  const msg=document.getElementById('mc-msg');
+  if(!nome){msg.style.color='var(--dan)';msg.textContent='⚠ Informe o nome.';return;}
+  const pont=parseInt(document.getElementById('mc-pont').value)||0;
+  const post=parseInt(document.getElementById('mc-post').value)||0;
+  const com=parseInt(document.getElementById('mc-com').value)||0;
+  const prod=parseInt(document.getElementById('mc-prod').value)||0;
+  const media=parseFloat(((pont+post+com+prod)/4).toFixed(1));
+  const editId=document.getElementById('mc-edit-id').value;
+  const cargo=document.getElementById('mc-cargo').value.trim();
+  const obs=document.getElementById('mc-obs').value.trim();
+  if(editId){
+    const idx=colaboradores.findIndex(x=>x.id===editId);
+    colaboradores[idx]={...colaboradores[idx],nome,cargo,pont,post,com,prod,media,obs};
   } else {
-    colaboradores.push({ id:'AV-'+Date.now(), nome, cargo:document.getElementById('mc-cargo').value.trim(), pont, post, com, prod, media:parseFloat(media), obs:document.getElementById('mc-obs').value.trim(), criadoEm:new Date().toISOString() });
+    colaboradores.push({id:'AV-'+Date.now(),nome,cargo,pont,post,com,prod,media,obs,criadoEm:new Date().toISOString()});
   }
-  saveColaboradores();
-  closeModal('modal-colaborador');
-  renderAvaliacao();
-  msg.style.color='var(--acc3)'; msg.textContent='✅ Salvo!';
+  saveColaboradores(); closeModal('modal-colaborador'); renderAvaliacao();
 }
-
-function excluirColaborador(id) {
-  const c = colaboradores.find(x=>x.id===id);
-  if (!confirm(`Excluir "${c.nome}"?`)) return;
-  colaboradores = colaboradores.filter(x=>x.id!==id);
+function excluirColaborador(id){
+  const c=colaboradores.find(x=>x.id===id);
+  if(!confirm('Excluir "'+c.nome+'"?')) return;
+  colaboradores=colaboradores.filter(x=>x.id!==id);
   saveColaboradores(); renderAvaliacao();
 }
-
-function starsHtml(val) {
-  return [1,2,3,4,5].map(i=>`<span style="color:${i<=val?'#f5a623':'var(--bor2)'};font-size:16px">★</span>`).join('');
-}
-
-function mediaColor(m) {
-  if (m>=4) return 'var(--acc3)';
-  if (m>=3) return 'var(--warn)';
-  return 'var(--dan)';
-}
-
+function mediaColor(m){ return m>=4?'var(--acc3)':m>=3?'var(--warn)':'var(--dan)'; }
 function renderAvaliacao() {
-  document.getElementById('av-pill').textContent = colaboradores.length;
-  document.getElementById('av-count').textContent = colaboradores.length + ' colaborador(es)';
-  const tb = document.getElementById('tb-av');
-  if (!colaboradores.length) {
-    tb.innerHTML='<tr><td colspan="9" class="empty"><div class="eico">👥</div>Nenhum colaborador cadastrado</td></tr>';
-  } else {
-    tb.innerHTML = colaboradores.map(c=>`<tr>
+  document.getElementById('av-pill').textContent=colaboradores.length;
+  const tb=document.getElementById('tb-av');
+  if(!colaboradores.length){tb.innerHTML='<tr><td colspan="9" class="empty"><div class="eico">👥</div>Nenhum colaborador cadastrado</td></tr>';} 
+  else {
+    tb.innerHTML=colaboradores.map(c=>`<tr>
       <td style="font-weight:600">${c.nome}</td>
       <td style="font-size:11px;color:var(--mut2)">${c.cargo||'—'}</td>
-      <td style="text-align:center">${[1,2,3,4,5].map(i=>`<span style="color:${i<=c.pont?'#f5a623':'var(--bor2)'};font-size:15px">★</span>`).join('')}</td>
-      <td style="text-align:center">${[1,2,3,4,5].map(i=>`<span style="color:${i<=c.post?'#f5a623':'var(--bor2)'};font-size:15px">★</span>`).join('')}</td>
-      <td style="text-align:center">${[1,2,3,4,5].map(i=>`<span style="color:${i<=c.com?'#f5a623':'var(--bor2)'};font-size:15px">★</span>`).join('')}</td>
-      <td style="text-align:center">${[1,2,3,4,5].map(i=>`<span style="color:${i<=c.prod?'#f5a623':'var(--bor2)'};font-size:15px">★</span>`).join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.pont?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.post?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.com?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.prod?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
       <td style="text-align:center;font-family:var(--fh);font-size:18px;font-weight:800;color:${mediaColor(c.media)}">${c.media||'—'}</td>
       <td style="font-size:11px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${c.obs||''}">${c.obs||'—'}</td>
-      <td style="text-align:center;display:flex;gap:4px;justify-content:center">
+      <td style="display:flex;gap:4px">
         <button class="btn btn-ghost btn-xs" onclick="openModalColaborador('${c.id}')">✏</button>
         <button class="btn btn-xs" style="background:#f04f4f18;color:var(--dan);border:1px solid #f04f4f30" onclick="excluirColaborador('${c.id}')">🗑</button>
       </td>
     </tr>`).join('');
   }
-
-  // Ranking
-  const ranking = document.getElementById('av-ranking');
-  const sorted = [...colaboradores].sort((a,b)=>(b.media||0)-(a.media||0));
-  const max = sorted.length ? (sorted[0].media||1) : 1;
-  ranking.innerHTML = sorted.length ? sorted.map((c,i)=>`
+  const ranking=document.getElementById('av-ranking');
+  const sorted=[...colaboradores].sort((a,b)=>(b.media||0)-(a.media||0));
+  ranking.innerHTML=sorted.length?sorted.map((c,i)=>`
     <div class="bar-row" style="margin-bottom:14px">
       <div style="min-width:30px;font-family:var(--fh);font-size:16px;font-weight:800;color:${i===0?'#f5a623':i===1?'var(--mut2)':i===2?'#cd7f32':'var(--mut)'}">${i+1}º</div>
       <div class="bar-label" style="min-width:160px"><div style="font-weight:600">${c.nome}</div><div style="font-size:10px;color:var(--mut2)">${c.cargo||''}</div></div>
       <div class="bar-track" style="flex:1"><div class="bar-fill" style="width:${(c.media/5)*100}%;background:${mediaColor(c.media)}"></div></div>
       <div style="min-width:40px;text-align:right;font-weight:700;color:${mediaColor(c.media)}">${c.media||0}</div>
-      <div style="min-width:90px;text-align:right">${[1,2,3,4,5].map(i=>`<span style="color:${i<=Math.round(c.media)?'#f5a623':'var(--bor2)'};font-size:13px">★</span>`).join('')}</div>
-    </div>`).join('') : '<div style="color:var(--mut2);font-size:13px">Nenhum dado para exibir.</div>';
+    </div>`).join(''):'<div style="color:var(--mut2);font-size:13px">Nenhum dado.</div>';
 }
-
-function exportExcelAv() {
-  if (!colaboradores.length) { alert('Nenhum colaborador para exportar.'); return; }
-  const rows = colaboradores.map(c=>({
-    'Nome':c.nome, 'Cargo':c.cargo||'',
-    'Pontualidade':c.pont||0, 'Postura':c.post||0,
-    'Comunicação':c.com||0, 'Produtividade':c.prod||0,
-    'Média':c.media||0, 'Comentários':c.obs||''
-  }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = Object.keys(rows[0]).map(k=>({wch:Math.max(k.length,...rows.map(r=>String(r[k]||'').length))+2}));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Avaliação');
-  XLSX.writeFile(wb, `Avaliacao_Desempenho_${new Date().toISOString().slice(0,10)}.xlsx`);
+function exportExcelAv(){
+  if(!colaboradores.length){alert('Nenhum colaborador.');return;}
+  const rows=colaboradores.map(c=>({'Nome':c.nome,'Cargo':c.cargo||'','Pontualidade':c.pont||0,'Postura':c.post||0,'Comunicação':c.com||0,'Produtividade':c.prod||0,'Média':c.media||0,'Comentários':c.obs||''}));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Avaliação');
+  XLSX.writeFile(wb,'Avaliacao_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 
 // ── INIT ──────────────────────────────────────────────────────
 populaSelects();
 initFirebase();
-initAvaliacoes();
 </script>
 </body>
 </html>
