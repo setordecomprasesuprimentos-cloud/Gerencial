@@ -13,12 +13,17 @@
 .star-group{display:flex;gap:4px;margin-top:4px}
 .star{font-size:22px;cursor:pointer;color:var(--bor2);transition:color .15s;user-select:none}
 .star.on{color:#f5a623}
+/* SUBSTITUA o bloco :root no seu index.html por este */
 :root {
-  --bg:#0c0e14; --sur:#13161f; --sur2:#1a1e2e; --sur3:#1f2438;
-  --bor:#252a3d; --bor2:#2e3450;
+  --bg:#2b2d32;
+  --sur:#33363c;
+  --sur2:#3a3d44;
+  --sur3:#40434b;
+  --bor:#4a4d55;
+  --bor2:#55585f;
   --acc:#f5a623; --acc2:#4f8ef7; --acc3:#1ec995; --acc4:#a78bfa;
   --dan:#f04f4f; --warn:#f59e0b;
-  --txt:#dde1ee; --mut:#5e6785; --mut2:#8892aa;
+  --txt:#eceef3; --mut:#7a8099; --mut2:#9da3b5;
   --fh:'Syne',sans-serif; --fb:'DM Sans',sans-serif;
   --r:10px; --r2:14px;
 }
@@ -1221,14 +1226,14 @@ function renderAnalise() {
   renderCharts(d, obras);
 }
 // ── GRÁFICOS ──────────────────────────────────────────────────
+// SUBSTITUA a função renderCharts inteira no seu index.html por este trecho
 let _charts = {};
 function destroyChart(id) { if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; } }
 function renderCharts(d, obras) {
-  const chartDefaults = { color: '#dde1ee', borderColor: '#252a3d' };
   Chart.defaults.color = '#8892aa';
   Chart.defaults.borderColor = '#252a3d';
 
-  // Chart 1: Requisições por Obra
+  // ── Chart 1: Requisições por Obra (barras) ──
   destroyChart('obras');
   const obraLabels = obras.filter(o => d.some(r => r.obra === o));
   const obraData = obraLabels.map(o => d.filter(r => r.obra === o).length);
@@ -1240,40 +1245,138 @@ function renderCharts(d, obras) {
         backgroundColor: ['#4f8ef7cc','#f5a623cc','#1ec995cc','#a78bfacc','#f04f4fcc','#f59e0bcc','#4f8ef7cc','#1ec995cc','#a78bfacc','#f5a623cc','#f04f4fcc','#4f8ef7cc','#1ec995cc'],
         borderRadius: 6, borderSkipped: false }]
     },
-    options: { responsive:true, plugins:{legend:{display:false}}, scales:{
-      x:{ticks:{font:{size:9},maxRotation:35}}, y:{ticks:{stepSize:1},beginAtZero:true}
-    }}
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        datalabels: { display: false }
+      },
+      scales: {
+        x: { ticks: { font: { size: 9 }, maxRotation: 35 } },
+        y: { ticks: { stepSize: 1 }, beginAtZero: true }
+      }
+    },
+    plugins: [{
+      id: 'barLabels',
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        chart.data.datasets.forEach((dataset, i) => {
+          const meta = chart.getDatasetMeta(i);
+          meta.data.forEach((bar, index) => {
+            const value = dataset.data[index];
+            if (!value) return;
+            ctx.save();
+            ctx.fillStyle = '#dde1ee';
+            ctx.font = 'bold 11px DM Sans, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(value, bar.x, bar.y - 5);
+            ctx.restore();
+          });
+        });
+      }
+    }]
   });
 
-  // Chart 2: Planejado x Urgente (donut)
+  // ── Chart 2: Planejado x Urgente (donut) ──
   destroyChart('tipo');
   const plan = d.filter(r => r.tipo === 'Planejado').length;
-  const urg = d.filter(r => r.tipo === 'Urgente').length;
+  const urg  = d.filter(r => r.tipo === 'Urgente').length;
+  const totTipo = plan + urg;
   _charts['tipo'] = new Chart(document.getElementById('chart-tipo'), {
     type: 'doughnut',
     data: {
       labels: ['Planejado', 'Urgente'],
       datasets: [{ data: [plan, urg], backgroundColor: ['#1ec995cc','#f04f4fcc'], borderWidth: 0, hoverOffset: 6 }]
     },
-    options: { responsive:true, cutout:'65%', plugins:{legend:{position:'bottom',labels:{padding:16,font:{size:11}}}} }
+    options: {
+      responsive: true,
+      cutout: '65%',
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 16, font: { size: 11 } } },
+        tooltip: { enabled: true }
+      }
+    },
+    plugins: [{
+      id: 'donutLabels',
+      afterDatasetsDraw(chart) {
+        const { ctx, data } = chart;
+        const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+        if (!total) return;
+        const meta = chart.getDatasetMeta(0);
+        meta.data.forEach((arc, i) => {
+          const value = data.datasets[0].data[i];
+          if (!value) return;
+          const pct = Math.round(value / total * 100);
+          const angle = (arc.startAngle + arc.endAngle) / 2;
+          const r = (arc.innerRadius + arc.outerRadius) / 2;
+          const x = arc.x + Math.cos(angle) * r;
+          const y = arc.y + Math.sin(angle) * r;
+          ctx.save();
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 12px DM Sans, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(`${value}`, x, y - 7);
+          ctx.font = '10px DM Sans, sans-serif';
+          ctx.fillStyle = 'rgba(255,255,255,0.8)';
+          ctx.fillText(`${pct}%`, x, y + 7);
+          ctx.restore();
+        });
+      }
+    }]
   });
 
-  // Chart 3: Status (donut)
+  // ── Chart 3: Status (donut) ──
   destroyChart('status');
   const statusLabels = ['Pendente','Finalizada','Aguardando PGT Cliente','Aguardando Iniciar Obra'];
-  const statusShort = ['Pendente','Finalizada','Ag. PGT Cliente','Ag. Iniciar Obra'];
+  const statusShort  = ['Pendente','Finalizada','Ag. PGT Cliente','Ag. Iniciar Obra'];
   const statusColors = ['#f59e0bcc','#1ec995cc','#a78bfacc','#4f8ef7cc'];
-  const statusData = statusLabels.map(s => d.filter(r => r.status === s).length);
+  const statusData   = statusLabels.map(s => d.filter(r => r.status === s).length);
   _charts['status'] = new Chart(document.getElementById('chart-status'), {
     type: 'doughnut',
     data: {
       labels: statusShort,
       datasets: [{ data: statusData, backgroundColor: statusColors, borderWidth: 0, hoverOffset: 6 }]
     },
-    options: { responsive:true, cutout:'60%', plugins:{legend:{position:'bottom',labels:{padding:12,font:{size:10}}}} }
+    options: {
+      responsive: true,
+      cutout: '60%',
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 12, font: { size: 10 } } },
+        tooltip: { enabled: true }
+      }
+    },
+    plugins: [{
+      id: 'donutLabelsStatus',
+      afterDatasetsDraw(chart) {
+        const { ctx, data } = chart;
+        const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+        if (!total) return;
+        const meta = chart.getDatasetMeta(0);
+        meta.data.forEach((arc, i) => {
+          const value = data.datasets[0].data[i];
+          if (!value) return;
+          const pct = Math.round(value / total * 100);
+          const angle = (arc.startAngle + arc.endAngle) / 2;
+          const r = (arc.innerRadius + arc.outerRadius) / 2;
+          const x = arc.x + Math.cos(angle) * r;
+          const y = arc.y + Math.sin(angle) * r;
+          ctx.save();
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 12px DM Sans, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(`${value}`, x, y - 7);
+          ctx.font = '10px DM Sans, sans-serif';
+          ctx.fillStyle = 'rgba(255,255,255,0.8)';
+          ctx.fillText(`${pct}%`, x, y + 7);
+          ctx.restore();
+        });
+      }
+    }]
   });
 
-  // Chart 4: Carga por Comprador (bar horizontal)
+  // ── Chart 4: Carga por Comprador (barras agrupadas) ──
   destroyChart('comp');
   const compData = COMPS.map(c => d.filter(r => r.comp === c).length);
   _charts['comp'] = new Chart(document.getElementById('chart-comp'), {
@@ -1281,14 +1384,37 @@ function renderCharts(d, obras) {
     data: {
       labels: COMPS,
       datasets: [
-        { label: 'Total', data: compData, backgroundColor: '#4f8ef7cc', borderRadius: 6 },
-        { label: 'Finalizadas', data: COMPS.map(c => d.filter(r => r.comp === c && r.status === 'Finalizada').length), backgroundColor: '#1ec995cc', borderRadius: 6 },
-        { label: 'Urgentes', data: COMPS.map(c => d.filter(r => r.comp === c && r.tipo === 'Urgente').length), backgroundColor: '#f04f4fcc', borderRadius: 6 }
+        { label: 'Total',      data: compData, backgroundColor: '#4f8ef7cc', borderRadius: 6 },
+        { label: 'Finalizadas',data: COMPS.map(c => d.filter(r => r.comp === c && r.status === 'Finalizada').length), backgroundColor: '#1ec995cc', borderRadius: 6 },
+        { label: 'Urgentes',   data: COMPS.map(c => d.filter(r => r.comp === c && r.tipo === 'Urgente').length), backgroundColor: '#f04f4fcc', borderRadius: 6 }
       ]
     },
-    options: { responsive:true, plugins:{legend:{position:'bottom',labels:{padding:12,font:{size:11}}}},
-      scales:{ y:{beginAtZero:true, ticks:{stepSize:1}} }
-    }
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 12, font: { size: 11 } } }
+      },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    },
+    plugins: [{
+      id: 'barLabelsComp',
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        chart.data.datasets.forEach((dataset, i) => {
+          const meta = chart.getDatasetMeta(i);
+          meta.data.forEach((bar, index) => {
+            const value = dataset.data[index];
+            if (!value) return;
+            ctx.save();
+            ctx.fillStyle = '#dde1ee';
+            ctx.font = 'bold 11px DM Sans, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(value, bar.x, bar.y - 5);
+            ctx.restore();
+          });
+        });
+      }
+    }]
   });
 }
 
