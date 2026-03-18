@@ -308,8 +308,33 @@ input[type=date]{color-scheme:dark}
   <div class="stitle">Análise por Obra <span class="pill green">Levantamento</span></div>
   <div class="fbar">
     <div class="fg"><label>Filtrar Obra</label><select id="fa-obra" onchange="renderAnalise()"><option value="">Todas as obras</option></select></div>
+    <div class="fg"><label>Comprador</label><select id="fa-comp" onchange="renderAnalise()"><option value="">Todos</option></select></div>
+    <div class="fg"><label>Status</label>
+      <select id="fa-status" onchange="renderAnalise()">
+        <option value="">Todos</option>
+        <option>Pendente</option><option>Finalizada</option>
+        <option>Aguardando PGT Cliente</option><option>Aguardando Iniciar Obra</option>
+        <option>Reprovado</option><option>Valor S/BDI Abaixo</option>
+      </select>
+    </div>
+    <div class="fg"><label>Tipo</label>
+      <select id="fa-tipo" onchange="renderAnalise()">
+        <option value="">Todos</option><option>Planejado</option><option>Urgente</option>
+      </select>
+    </div>
+    <div class="fg"><label>Prioridade</label>
+      <select id="fa-prio" onchange="renderAnalise()">
+        <option value="">Todas</option><option>Alta</option><option>Média</option><option>Baixa</option>
+      </select>
+    </div>
     <div class="fg"><label>Período — De</label><input type="date" id="fa-de" onchange="renderAnalise()"></div>
     <div class="fg"><label>Período — Até</label><input type="date" id="fa-ate" onchange="renderAnalise()"></div>
+    <div class="fg" style="display:flex;align-items:flex-end;gap:8px;flex-shrink:0">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 12px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;font-size:12px;white-space:nowrap">
+        <input type="checkbox" id="fa-aberto" onchange="renderAnalise()" style="accent-color:var(--acc);width:14px;height:14px">
+        🔓 Sempre incluir em aberto
+      </label>
+    </div>
     <div style="display:flex;gap:8px;align-items:flex-end;flex-shrink:0">
       <button class="btn btn-ghost btn-sm" onclick="limparFA()">✕ Limpar</button>
       <button class="btn btn-green btn-sm" onclick="exportExcelAna()">⬇ Excel</button>
@@ -323,7 +348,6 @@ input[type=date]{color-scheme:dark}
     <div class="ana-card"><h4>👤 Carga por Comprador</h4><canvas id="chart-comp" height="220"></canvas></div>
   </div>
 </div>
-
 <!-- COMPRADORES -->
 <div class="tab-content" id="tab-compradores">
   <div class="stitle">Desempenho dos Compradores</div>
@@ -1135,47 +1159,84 @@ function exportExcel() {
 
 // ── ANÁLISE POR OBRA ─────────────────────────────────────────
 function getAnaFilt() {
-  const fo=document.getElementById('fa-obra')?.value||'';
-  const fde=document.getElementById('fa-de')?.value||'';
-  const fat=document.getElementById('fa-ate')?.value||'';
-  return reqs.filter(r=>{
-    if(fo&&r.obra!==fo) return false;
-    if(fde&&r.dtab<fde) return false;
-    if(fat&&r.dtab>fat) return false;
+  const fo  = document.getElementById('fa-obra')?.value   || '';
+  const fc  = document.getElementById('fa-comp')?.value   || '';
+  const fs  = document.getElementById('fa-status')?.value || '';
+  const ft  = document.getElementById('fa-tipo')?.value   || '';
+  const fp  = document.getElementById('fa-prio')?.value   || '';
+  const fde = document.getElementById('fa-de')?.value     || '';
+  const fat = document.getElementById('fa-ate')?.value    || '';
+  const aberto = document.getElementById('fa-aberto')?.checked || false;
+  const statusAberto = ['Pendente','Aguardando PGT Cliente','Aguardando Iniciar Obra','Valor S/BDI Abaixo'];
+  return reqs.filter(r => {
+    const eAberto = statusAberto.includes(r.status);
+    if (aberto && eAberto) {
+      if (fo && r.obra   !== fo) return false;
+      if (fc && r.comp   !== fc) return false;
+      if (fs && r.status !== fs) return false;
+      if (ft && r.tipo   !== ft) return false;
+      if (fp && r.prio   !== fp) return false;
+      return true;
+    }
+    if (fo  && r.obra   !== fo)  return false;
+    if (fc  && r.comp   !== fc)  return false;
+    if (fs  && r.status !== fs)  return false;
+    if (ft  && r.tipo   !== ft)  return false;
+    if (fp  && r.prio   !== fp)  return false;
+    if (fde && r.dtab   <   fde) return false;
+    if (fat && r.dtab   >   fat) return false;
     return true;
   });
 }
+
 function limparFA() {
-  ['fa-obra','fa-de','fa-ate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['fa-obra','fa-comp','fa-status','fa-tipo','fa-prio','fa-de','fa-ate'].forEach(id => {
+    const e = document.getElementById(id); if (e) e.value = '';
+  });
+  const cb = document.getElementById('fa-aberto'); if (cb) cb.checked = false;
   renderAnalise();
 }
-function renderAnalise() {
-  const d=getAnaFilt();
-  const fo=document.getElementById('fa-obra')?.value||'';
-  const obras=fo?[fo]:OBRAS;
-  const tot=d.length,plan=d.filter(r=>r.tipo==='Planejado').length,urg=d.filter(r=>r.tipo==='Urgente').length,fin=d.filter(r=>r.status==='Finalizada').length;
 
-  let html=`<div class="cards-grid" style="margin-bottom:20px">
+function renderAnalise() {
+  const faObra = document.getElementById('fa-obra');
+  if (faObra) { const v=faObra.value; faObra.innerHTML='<option value="">Todas as obras</option>'+OBRAS.map(o=>`<option>${o}</option>`).join(''); faObra.value=v; }
+  const faComp = document.getElementById('fa-comp');
+  if (faComp) { const v=faComp.value; faComp.innerHTML='<option value="">Todos</option>'+COMPS.map(c=>`<option>${c}</option>`).join(''); faComp.value=v; }
+
+  const d = getAnaFilt();
+  const fo = document.getElementById('fa-obra')?.value || '';
+  const obras = fo ? [fo] : OBRAS;
+  const aberto = document.getElementById('fa-aberto')?.checked || false;
+
+  const tot  = d.length;
+  const plan = d.filter(r => r.tipo === 'Planejado').length;
+  const urg  = d.filter(r => r.tipo === 'Urgente').length;
+  const fin  = d.filter(r => r.status === 'Finalizada').length;
+  const emAberto = d.filter(r => ['Pendente','Aguardando PGT Cliente','Aguardando Iniciar Obra','Valor S/BDI Abaixo'].includes(r.status)).length;
+
+  let html = `<div class="cards-grid" style="margin-bottom:20px">
     <div class="sc c5"><div class="sc-lbl">Total Filtrado</div><div class="sc-val">${tot}</div><div class="sc-sub">requisições</div></div>
     <div class="sc c4"><div class="sc-lbl">Planejadas</div><div class="sc-val">${plan}</div><div class="sc-sub">${tot?Math.round(plan/tot*100):0}%</div></div>
     <div class="sc c3"><div class="sc-lbl">Urgentes</div><div class="sc-val">${urg}</div><div class="sc-sub">${tot?Math.round(urg/tot*100):0}%</div></div>
     <div class="sc c1"><div class="sc-lbl">Finalizadas</div><div class="sc-val">${fin}</div><div class="sc-sub">${tot?Math.round(fin/tot*100):0}%</div></div>
+    <div class="sc c2"><div class="sc-lbl">Em Aberto</div><div class="sc-val" style="color:var(--warn)">${emAberto}</div><div class="sc-sub">${aberto?'✔ incluindo sem data':''}</div></div>
   </div>`;
 
-  html+=`<div class="twrap" style="margin-bottom:20px"><div class="twrap-hd"><h3>📊 Levantamento por Obra — Planejado × Urgente × Status</h3></div>
+  html += `<div class="twrap" style="margin-bottom:20px"><div class="twrap-hd"><h3>📊 Levantamento por Obra — Planejado × Urgente × Status</h3></div>
   <div class="tscroll"><table><thead><tr>
     <th>Obra</th><th>Total</th>
     <th>Planejadas</th><th>% Plan.</th>
     <th>Urgentes</th><th>% Urg.</th>
     <th>Pendentes</th><th>Finalizadas</th><th>Ag. PGT</th><th>Ag. Obra</th><th>Atrasadas</th>
   </tr></thead><tbody>`;
-  obras.forEach(o=>{
-    const od=d.filter(r=>r.obra===o); if(!od.length) return;
-    const t=od.length,pl=od.filter(r=>r.tipo==='Planejado').length,ur=od.filter(r=>r.tipo==='Urgente').length;
-    const pend=od.filter(r=>r.status==='Pendente').length,fn=od.filter(r=>r.status==='Finalizada').length;
-    const pgt=od.filter(r=>r.status==='Aguardando PGT Cliente').length,ob=od.filter(r=>r.status==='Aguardando Iniciar Obra').length;
+
+  obras.forEach(o => {
+    const od = d.filter(r => r.obra === o); if (!od.length) return;
+    const t=od.length, pl=od.filter(r=>r.tipo==='Planejado').length, ur=od.filter(r=>r.tipo==='Urgente').length;
+    const pend=od.filter(r=>r.status==='Pendente').length, fn=od.filter(r=>r.status==='Finalizada').length;
+    const pgt=od.filter(r=>r.status==='Aguardando PGT Cliente').length, ob=od.filter(r=>r.status==='Aguardando Iniciar Obra').length;
     const atr=od.filter(r=>isLate(r)).length;
-    html+=`<tr>
+    html += `<tr>
       <td style="font-weight:600;font-size:12px">${o}</td>
       <td style="font-family:var(--fh);font-weight:700;color:var(--acc)">${t}</td>
       <td style="color:var(--acc3);font-weight:600">${pl}</td>
@@ -1193,11 +1254,10 @@ function renderAnalise() {
       <td style="color:${atr>0?'var(--dan)':'var(--mut2)'}"><strong>${atr}</strong></td>
     </tr>`;
   });
-  html+=`</tbody></table></div></div>`;
 
-  html+=`<div class="ana-grid">
-  <div class="ana-card"><h4>Planejado vs Urgente por Obra</h4>`;
-  obras.forEach(o=>{
+  html += `</tbody></table></div></div>`;
+  html += `<div class="ana-grid"><div class="ana-card"><h4>Planejado vs Urgente por Obra</h4>`;
+  obras.forEach(o => {
     const od=d.filter(r=>r.obra===o); if(!od.length) return;
     const t=od.length,pl=od.filter(r=>r.tipo==='Planejado').length,ur=od.filter(r=>r.tipo==='Urgente').length;
     html+=`<div class="bar-row">
@@ -1215,8 +1275,7 @@ function renderAnalise() {
       <div class="bar-num">${t}</div>
     </div>`;
   });
-  html+=`</div>
-  <div class="ana-card"><h4>Taxa de Conclusão por Obra</h4>`;
+  html+=`</div><div class="ana-card"><h4>Taxa de Conclusão por Obra</h4>`;
   obras.forEach(o=>{
     const od=d.filter(r=>r.obra===o); if(!od.length) return;
     const t=od.length,fn=od.filter(r=>r.status==='Finalizada').length,taxa=t?Math.round(fn/t*100):0;
@@ -1227,9 +1286,8 @@ function renderAnalise() {
     </div>`;
   });
   html+=`</div></div>`;
-
   document.getElementById('ana-cont').innerHTML=html;
-  renderCharts(d, obras);
+  renderCharts(d,obras);
 }
 // ── GRÁFICOS ──────────────────────────────────────────────────
 let _charts = {};
