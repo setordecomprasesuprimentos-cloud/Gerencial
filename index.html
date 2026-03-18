@@ -153,6 +153,11 @@ input[type=date]{color-scheme:dark}
   main{padding:14px} header{padding:12px 14px} nav{padding:0 12px}
   .cards-grid{grid-template-columns:1fr 1fr}
 }
+
+.star-group { display:flex; gap:4px; margin-top:4px; }
+.star { font-size:22px; cursor:pointer; color:var(--bor2); transition:color .15s; user-select:none; }
+.star.on { color:#f5a623; }
+.star:hover { color:#f5a623; transform:scale(1.1); }
 </style>
 </head>
 <body>
@@ -185,6 +190,11 @@ input[type=date]{color-scheme:dark}
   <button onclick="showTab('compradores')">👥 Compradores</button>
   <button onclick="showTab('nova')">➕ Nova Requisição</button>
   <button onclick="showTab('contatos')">📞 Contatos com Obras</button>
+  <button onclick="showTab('avaliacao')">⭐ Avaliação</button>
+  <button onclick="showTab('avaliacao')">⭐ Avaliação</button>
+  <button onclick="showTab('avaliacao')">⭐ Avaliação</button>
+  <button onclick="showTab('avaliacao')">⭐ Avaliação</button>
+  <button onclick="showTab('avaliacao')">⭐ Avaliação</button>
 </nav>
 
 <main>
@@ -200,6 +210,7 @@ input[type=date]{color-scheme:dark}
       <select id="df-status" onchange="renderDash()">
         <option value="">Todos</option><option>Pendente</option><option>Finalizada</option>
         <option>Aguardando PGT Cliente</option><option>Aguardando Iniciar Obra</option>
+        <option>Reprovado</option><option>Valor S/BDI Abaixo</option>
       </select>
     </div>
     <div class="fg"><label>Tipo</label>
@@ -264,6 +275,7 @@ input[type=date]{color-scheme:dark}
       <select id="f-status" onchange="renderReq()">
         <option value="">Todos</option><option>Pendente</option><option>Finalizada</option>
         <option>Aguardando PGT Cliente</option><option>Aguardando Iniciar Obra</option>
+        <option>Reprovado</option><option>Valor S/BDI Abaixo</option>
       </select>
     </div>
     <div class="fg"><label>Tipo</label>
@@ -292,7 +304,7 @@ input[type=date]{color-scheme:dark}
       <th style="width:36px"><input type="checkbox" id="sel-all-head" onchange="toggleSelectAll()" style="accent-color:var(--acc);cursor:pointer"></th>
       <th>Nº</th><th>Abertura</th><th>Obra</th><th>Material / Descrição</th>
       <th>Qtd</th><th>Comprador</th><th>Tipo</th><th>Prioridade</th>
-      <th>Status</th><th>Prazo Fechar</th><th>Data Fechou</th><th>Ações</th>
+      <th>Status</th><th>Prazo Fechar</th><th>Data Fechou</th><th>Observações</th><th>Ações</th>
     </tr></thead><tbody id="tb-req"></tbody></table>
   </div></div>
 </div>
@@ -339,8 +351,8 @@ input[type=date]{color-scheme:dark}
   <div class="stitle">Nova Requisição</div>
   <div class="twrap" style="padding:24px">
     <div class="fgrid">
-      <div class="fg"><label>Nº Requisição <span style="font-size:10px;color:var(--mut2)">(deixe em branco para gerar automático)</span></label>
-        <input type="text" id="nf-id" placeholder="Ex: REQ-042 ou 042"></div>
+      <div class="fg"><label>Nº Requisição <span style="font-size:10px;color:var(--dan)">* obrigatório</span></label>
+        <input type="text" id="nf-id" placeholder="Ex: 1500-2026 ou 1500/01-2026"></div>
       <div class="fg"><label>Obra *</label><select id="nf-obra"><option value="">Selecione...</option></select></div>
       <div class="fg"><label>Material / Descrição *</label><input type="text" id="nf-mat" placeholder="Descreva o material ou serviço"></div>
       <div class="fg"><label>Quantidade</label><input type="text" id="nf-qtd" placeholder="Ex: 50 un, 10 m³"></div>
@@ -359,6 +371,7 @@ input[type=date]{color-scheme:dark}
         <select id="nf-status">
           <option>Pendente</option><option>Aguardando PGT Cliente</option>
           <option>Aguardando Iniciar Obra</option><option>Finalizada</option>
+          <option>Reprovado</option><option>Valor S/BDI Abaixo</option>
         </select>
       </div>
       <div class="fg"><label>Data que Fechou</label><input type="date" id="nf-fechou"></div>
@@ -413,7 +426,273 @@ input[type=date]{color-scheme:dark}
   </div>
 </div>
 
+
+<!-- AVALIAÇÃO DE DESEMPENHO -->
+<div class="tab-content" id="tab-avaliacao">
+  <div class="stitle">⭐ Avaliação de Desempenho <span class="pill green" id="av-pill">0</span></div>
+
+  <!-- Barra de ações -->
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap">
+    <button class="btn btn-primary btn-sm" onclick="openModalAvaliacao()">+ Nova Avaliação</button>
+    <button class="btn btn-green btn-sm" onclick="exportExcelAvaliacao()">⬇ Excel</button>
+    <div class="fg" style="min-width:200px;max-width:300px">
+      <select id="av-f-colab" onchange="renderAvaliacao()" style="background:var(--sur2);border:1px solid var(--bor);border-radius:8px;color:var(--txt);font-family:var(--fb);font-size:13px;padding:8px 12px;outline:none;width:100%">
+        <option value="">Todos os colaboradores</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Cards de média -->
+  <div class="cards-grid" id="av-cards" style="margin-bottom:20px"></div>
+
+  <!-- Tabela de avaliações -->
+  <div class="twrap"><div class="tscroll">
+    <table><thead><tr>
+      <th>Data</th><th>Colaborador</th><th>Pontualidade</th><th>Postura</th>
+      <th>Comunicação</th><th>Produtividade</th><th>Trabalho em Equipe</th>
+      <th>Média</th><th>Comentários</th><th>Ação</th>
+    </tr></thead><tbody id="tb-avaliacao"></tbody></table>
+  </div></div>
+</div>
+
+<!-- MODAL NOVA AVALIAÇÃO -->
+<div class="modal-ov" id="modal-avaliacao">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-title">
+      ⭐ <span id="av-modal-title">Nova Avaliação</span>
+      <button class="xbtn" onclick="closeModal('modal-avaliacao')">✕</button>
+    </div>
+    <input type="hidden" id="av-edit-id">
+    <div class="fgrid">
+      <div class="fg"><label>Colaborador *</label>
+        <select id="av-colab">
+          <option value="">Selecione...</option>
+        </select>
+      </div>
+      <div class="fg"><label>Data *</label><input type="date" id="av-data"></div>
+    </div>
+
+    <!-- Critérios com estrelas -->
+    <div style="background:var(--sur2);border-radius:10px;padding:16px;margin:14px 0">
+      <div style="font-size:11px;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Critérios de Avaliação</div>
+      <div id="av-criterios">
+        <!-- gerado por JS -->
+      </div>
+    </div>
+
+    <div class="fg" style="margin-bottom:16px">
+      <label>Comentários / Observações</label>
+      <textarea id="av-obs" rows="3" placeholder="Pontos positivos, áreas de melhoria..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="btn btn-primary" onclick="salvarAvaliacao()">💾 Salvar Avaliação</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-avaliacao')">Cancelar</button>
+      <span id="av-msg" style="font-size:12px"></span>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CADASTRAR COLABORADOR -->
+<div class="modal-ov" id="modal-av-colab">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title">👤 Novo Colaborador <button class="xbtn" onclick="closeModal('modal-av-colab')">✕</button></div>
+    <div class="fg" style="margin-bottom:14px"><label>Nome *</label><input type="text" id="av-nc-nome" placeholder="Nome completo"></div>
+    <div class="fg" style="margin-bottom:14px"><label>Cargo / Função</label><input type="text" id="av-nc-cargo" placeholder="Ex: Pedreiro, Eletricista..."></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="salvarColabAv()">💾 Salvar</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-av-colab')">Cancelar</button>
+    </div>
+    <div id="av-nc-msg" style="font-size:12px;margin-top:8px"></div>
+  </div>
+</div>
+
+
+<!-- AVALIAÇÃO DE DESEMPENHO -->
+<div class="tab-content" id="tab-avaliacao">
+  <div class="stitle">⭐ Avaliação de Desempenho <span class="pill green" id="av-pill">0</span></div>
+
+  <!-- Barra de ações -->
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap">
+    <button class="btn btn-primary btn-sm" onclick="openModalAvaliacao()">+ Nova Avaliação</button>
+    <button class="btn btn-green btn-sm" onclick="exportExcelAvaliacao()">📊 Exportar Excel</button>
+    <div class="fg" style="min-width:200px">
+      <select id="av-f-colab" onchange="renderAvaliacao()" style="font-size:12px;padding:7px 10px">
+        <option value="">Todos os colaboradores</option>
+      </select>
+    </div>
+    <div class="fg" style="min-width:160px">
+      <select id="av-f-periodo" onchange="renderAvaliacao()" style="font-size:12px;padding:7px 10px">
+        <option value="">Todos os períodos</option>
+      </select>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="limparAvFiltros()">✕ Limpar</button>
+  </div>
+
+  <!-- Cards resumo -->
+  <div class="cards-grid" id="av-cards" style="margin-bottom:20px"></div>
+
+  <!-- Tabela -->
+  <div class="twrap"><div class="tscroll">
+    <table><thead><tr>
+      <th>Data</th><th>Colaborador</th><th>Período</th>
+      <th style="text-align:center">Pontualidade</th>
+      <th style="text-align:center">Postura</th>
+      <th style="text-align:center">Comunicação</th>
+      <th style="text-align:center">Proatividade</th>
+      <th style="text-align:center">Qualidade</th>
+      <th style="text-align:center">Média</th>
+      <th>Comentários</th><th>Ações</th>
+    </tr></thead><tbody id="tb-avaliacao"></tbody></table>
+  </div></div>
+
+  <!-- Ranking -->
+  <div class="twrap" style="margin-top:20px">
+    <div class="twrap-hd"><h3>🏆 Ranking de Desempenho</h3></div>
+    <div id="av-ranking" style="padding:16px"></div>
+  </div>
+</div>
+<!-- AVALIAÇÃO DE DESEMPENHO -->
+<div class="tab-content" id="tab-avaliacao">
+  <div class="stitle">Avaliação de Desempenho <span class="pill green" id="av-pill">0</span></div>
+
+  <!-- Adicionar colaborador -->
+  <div class="twrap" style="padding:20px;margin-bottom:18px">
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+      <div class="fg" style="flex:2;min-width:180px">
+        <label style="font-size:10.5px;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block">Nome do Colaborador</label>
+        <input type="text" id="av-nome" placeholder="Ex: João Silva" onkeydown="if(event.key==='Enter')adicionarAvaliado()">
+      </div>
+      <div class="fg" style="flex:1;min-width:150px">
+        <label style="font-size:10.5px;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block">Cargo / Função</label>
+        <input type="text" id="av-cargo" placeholder="Ex: Pedreiro">
+      </div>
+      <div class="fg" style="flex:1;min-width:150px">
+        <label style="font-size:10.5px;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block">Obra</label>
+        <select id="av-obra"><option value="">Selecione...</option></select>
+      </div>
+      <button class="btn btn-primary" onclick="adicionarAvaliado()">+ Adicionar</button>
+    </div>
+    <div id="av-msg" style="font-size:12px;margin-top:8px"></div>
+  </div>
+
+  <!-- Tabela de avaliações -->
+  <div class="twrap"><div class="tscroll">
+    <table>
+      <thead><tr>
+        <th>Nome</th><th>Cargo</th><th>Obra</th>
+        <th style="text-align:center">Pontualidade</th>
+        <th style="text-align:center">Postura</th>
+        <th style="text-align:center">Comunicação</th>
+        <th style="text-align:center">Produtividade</th>
+        <th style="text-align:center">Média</th>
+        <th>Comentários</th>
+        <th style="text-align:center">Ações</th>
+      </tr></thead>
+      <tbody id="tb-avaliacao"></tbody>
+    </table>
+  </div></div>
+
+  <!-- Resumo -->
+  <div class="cards-grid" style="margin-top:18px" id="av-cards"></div>
+</div>
+
+
+<!-- AVALIAÇÃO DE DESEMPENHO -->
+<div class="tab-content" id="tab-avaliacao">
+  <div class="stitle">⭐ Avaliação de Desempenho <span class="pill" id="av-pill">0</span></div>
+
+  <!-- Barra de ações -->
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap">
+    <button class="btn btn-primary btn-sm" onclick="openModalAvaliacao()">+ Novo Colaborador</button>
+    <button class="btn btn-green btn-sm" onclick="exportExcelAv()">📊 Exportar Excel</button>
+    <span style="font-size:12px;color:var(--mut2)" id="av-count"></span>
+  </div>
+
+  <!-- Cards dos colaboradores -->
+  <div id="av-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin-bottom:22px"></div>
+
+  <!-- Tabela resumo -->
+  <div class="twrap">
+    <div class="twrap-hd"><h3>📋 Resumo das Avaliações</h3></div>
+    <div class="tscroll">
+      <table><thead><tr>
+        <th>Colaborador</th>
+        <th style="text-align:center">Pontualidade</th>
+        <th style="text-align:center">Postura</th>
+        <th style="text-align:center">Comunicação</th>
+        <th style="text-align:center">Proatividade</th>
+        <th style="text-align:center">Trabalho em Equipe</th>
+        <th style="text-align:center">Média</th>
+        <th>Comentários</th>
+        <th>Ações</th>
+      </tr></thead>
+      <tbody id="tb-av"></tbody>
+    </table></div>
+  </div>
+</div>
+
+
+<!-- AVALIAÇÃO DE DESEMPENHO -->
+<div class="tab-content" id="tab-avaliacao">
+  <div class="stitle">⭐ Avaliação de Desempenho <span class="pill green" id="av-pill">0</span></div>
+
+  <!-- Ações -->
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap">
+    <button class="btn btn-primary btn-sm" onclick="openModalColaborador()">+ Novo Colaborador</button>
+    <button class="btn btn-green btn-sm" onclick="exportExcelAv()">📊 Exportar Excel</button>
+    <span style="font-size:12px;color:var(--mut2)" id="av-count"></span>
+  </div>
+
+  <!-- Tabela -->
+  <div class="twrap"><div class="tscroll">
+    <table><thead><tr>
+      <th>Nome</th><th>Cargo</th>
+      <th style="text-align:center">Pontualidade</th>
+      <th style="text-align:center">Postura</th>
+      <th style="text-align:center">Comunicação</th>
+      <th style="text-align:center">Produtividade</th>
+      <th style="text-align:center">Média</th>
+      <th>Comentários</th>
+      <th style="text-align:center">Ações</th>
+    </tr></thead><tbody id="tb-av"></tbody></table>
+  </div></div>
+
+  <!-- Histórico de avaliações -->
+  <div class="twrap" style="margin-top:20px">
+    <div class="twrap-hd"><h3>📊 Ranking de Desempenho</h3></div>
+    <div id="av-ranking" style="padding:16px"></div>
+  </div>
+</div>
+
 </main>
+
+<!-- MODAL AVALIAÇÃO -->
+<div class="modal-ov" id="modal-av">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-title">
+      <span id="av-modal-title">⭐ Novo Colaborador</span>
+      <button class="xbtn" onclick="closeModal('modal-av')">✕</button>
+    </div>
+    <input type="hidden" id="av-edit-id">
+    <div class="fgrid">
+      <div class="fg" style="grid-column:1/-1"><label>Nome do Colaborador *</label><input type="text" id="av-nome" placeholder="Nome completo"></div>
+      <div class="fg"><label>Cargo / Função</label><input type="text" id="av-cargo" placeholder="Ex: Pedreiro, Mestre de obras..."></div>
+      <div class="fg"><label>Obra</label><select id="av-obra"><option value="">Selecione...</option></select></div>
+    </div>
+    <div style="margin:16px 0;background:var(--sur2);border-radius:10px;padding:16px">
+      <div style="font-size:11px;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;font-weight:600">Critérios de Avaliação</div>
+      <div id="av-criterios" style="display:flex;flex-direction:column;gap:12px"></div>
+    </div>
+    <div class="fg" style="margin-bottom:16px"><label>Comentários / Observações</label>
+      <textarea id="av-obs" rows="3" placeholder="Pontos fortes, melhorias, observações gerais..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="btn btn-primary" onclick="salvarAvaliacao()">💾 Salvar</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-av')">Cancelar</button>
+      <span id="av-msg" style="font-size:12px"></span>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL NOVO COMPRADOR -->
 <div class="modal-ov" id="modal-comp">
@@ -520,7 +799,8 @@ input[type=date]{color-scheme:dark}
     <div class="fgrid">
       <div class="fg"><label>Status</label>
         <select id="m-status"><option>Pendente</option><option>Finalizada</option>
-          <option>Aguardando PGT Cliente</option><option>Aguardando Iniciar Obra</option></select>
+          <option>Aguardando PGT Cliente</option><option>Aguardando Iniciar Obra</option>
+          <option>Reprovado</option><option>Valor S/BDI Abaixo</option></select>
       </div>
       <div class="fg"><label>Comprador</label>
         <select id="m-comp"><option value="">Selecione...</option></select>
@@ -562,6 +842,69 @@ input[type=date]{color-scheme:dark}
     </div>
     <div style="max-height:340px;overflow-y:auto" id="obras-lista"></div>
     <div style="margin-top:14px;font-size:11px;color:var(--mut2)" id="obras-count"></div>
+  </div>
+</div>
+
+<!-- MODAL AVALIAÇÃO -->
+<div class="modal-ov" id="modal-avaliacao">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-title">
+      ⭐ <span id="av-modal-title">Nova Avaliação</span>
+      <button class="xbtn" onclick="closeModal('modal-avaliacao')">✕</button>
+    </div>
+    <input type="hidden" id="av-edit-id">
+    <div class="fgrid">
+      <div class="fg"><label>Colaborador *</label><input type="text" id="av-colab" placeholder="Nome do colaborador"></div>
+      <div class="fg"><label>Período *</label><input type="text" id="av-periodo" placeholder="Ex: Mar/2026, 1º Trim 2026"></div>
+      <div class="fg"><label>Avaliador</label><input type="text" id="av-avaliador" placeholder="Quem está avaliando"></div>
+      <div class="fg"><label>Data *</label><input type="date" id="av-data"></div>
+    </div>
+
+    <div style="background:var(--sur2);border-radius:10px;padding:16px;margin:14px 0">
+      <div style="font-size:11px;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Critérios de Avaliação — clique nas estrelas</div>
+      <div id="av-criterios-form"></div>
+    </div>
+
+    <div class="fg" style="margin-bottom:16px">
+      <label>Comentários / Observações</label>
+      <textarea id="av-comentarios" rows="3" placeholder="Pontos fortes, pontos a melhorar, metas..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="btn btn-primary" onclick="salvarAvaliacao()">💾 Salvar Avaliação</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-avaliacao')">Cancelar</button>
+      <span id="av-msg" style="font-size:12px"></span>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL COLABORADOR -->
+<div class="modal-ov" id="modal-colaborador">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title">
+      <span id="mc-title">Novo Colaborador</span>
+      <button class="xbtn" onclick="closeModal('modal-colaborador')">✕</button>
+    </div>
+    <input type="hidden" id="mc-edit-id">
+    <div class="fgrid">
+      <div class="fg"><label>Nome *</label><input type="text" id="mc-nome" placeholder="Nome completo"></div>
+      <div class="fg"><label>Cargo</label><input type="text" id="mc-cargo" placeholder="Ex: Pedreiro, Encarregado..."></div>
+    </div>
+    <div style="margin:16px 0 8px;font-size:11px;font-weight:700;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px">Avaliação (1 a 5 ⭐)</div>
+    <div class="fgrid">
+      <div class="fg"><label>Pontualidade</label><div id="stars-pont" class="star-group" data-field="pont"></div><input type="hidden" id="mc-pont" value="0"></div>
+      <div class="fg"><label>Postura</label><div id="stars-post" class="star-group" data-field="post"></div><input type="hidden" id="mc-post" value="0"></div>
+      <div class="fg"><label>Comunicação</label><div id="stars-com" class="star-group" data-field="com"></div><input type="hidden" id="mc-com" value="0"></div>
+      <div class="fg"><label>Produtividade</label><div id="stars-prod" class="star-group" data-field="prod"></div><input type="hidden" id="mc-prod" value="0"></div>
+    </div>
+    <div class="fg" style="margin-top:12px"><label>Comentários</label>
+      <textarea id="mc-obs" rows="3" placeholder="Observações sobre o colaborador..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;align-items:center">
+      <button class="btn btn-primary" onclick="salvarColaborador()">💾 Salvar</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-colaborador')">Cancelar</button>
+      <span id="mc-msg" style="font-size:12px"></span>
+    </div>
   </div>
 </div>
 
@@ -666,6 +1009,15 @@ async function initFirebase() {
       }
     });
 
+    // Listener em tempo real para colaboradores
+    db.collection('dados').doc('colaboradores').onSnapshot(snap => {
+      if (snap.exists && snap.data().list && snap.data().list.length > 0) {
+        colaboradores = snap.data().list;
+        localStorage.setItem('av_colab_v1', JSON.stringify(colaboradores));
+        if (document.getElementById('tab-avaliacao').classList.contains('active')) renderAvaliacao();
+      }
+    });
+
     // Listener em tempo real para obras e compradores
     db.collection('config').doc('obras').onSnapshot(snap => {
       if (snap.exists && snap.data().list?.length) {
@@ -683,8 +1035,19 @@ async function initFirebase() {
       }
     });
 
+    // Listener avaliados
+    db.collection('dados').doc('avaliados').onSnapshot(snap => {
+      if (snap.exists && snap.data().list) {
+        avaliados = snap.data().list;
+        localStorage.setItem('av_v1', JSON.stringify(avaliados));
+        if (document.getElementById('tab-avaliacao').classList.contains('active')) renderAvaliacao();
+      }
+    });
+
     _dbReady = true;
     setSyncStatus('ok');
+    await loadColaboradores();
+    renderAvaliacao();
 
     // Se Firebase estiver vazio, faz seed inicial e sobe
     if (!reqs.length) {
@@ -712,6 +1075,7 @@ async function initFirebase() {
     setSyncStatus('offline');
     reqs = JSON.parse(localStorage.getItem('reqs_v3') || '[]');
     contatos = JSON.parse(localStorage.getItem('contatos_v1') || '[]');
+    avaliados = JSON.parse(localStorage.getItem('av_v1') || '[]');
     initSeed();
     populaSelects();
     renderDash();
@@ -733,15 +1097,14 @@ function initSeed() {
   save(); populaSelects(); renderDash();
 }
 function nextId() {
-  const nums = reqs.map(r=>parseInt(r.id.replace('REQ-',''))).filter(n=>!isNaN(n));
-  return 'REQ-' + String((nums.length ? Math.max(...nums) : 0) + 1).padStart(3,'0');
+  return ''; // Usuário deve inserir o número manualmente
 }
 function fmt(d) { if(!d) return '—'; const p=d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
 function isLate(r) { return r.status!=='Finalizada' && r.prazo && new Date(r.prazo+'T23:59:59')<new Date(); }
 
 function sbadge(s) {
-  const m={'Pendente':'b-pend','Finalizada':'b-fin','Aguardando PGT Cliente':'b-pgt','Aguardando Iniciar Obra':'b-obra'};
-  const lbl={'Pendente':'Pendente','Finalizada':'Finalizada','Aguardando PGT Cliente':'Ag. PGT Cliente','Aguardando Iniciar Obra':'Ag. Iniciar Obra'};
+  const m={'Pendente':'b-pend','Finalizada':'b-fin','Aguardando PGT Cliente':'b-pgt','Aguardando Iniciar Obra':'b-obra','Reprovado':'b-late','Valor S/BDI Abaixo':'b-late'};
+  const lbl={'Pendente':'Pendente','Finalizada':'Finalizada','Aguardando PGT Cliente':'Ag. PGT Cliente','Aguardando Iniciar Obra':'Ag. Iniciar Obra','Reprovado':'Reprovado','Valor S/BDI Abaixo':'S/BDI Abaixo'};
   return `<span class="badge ${m[s]||'b-pend'}">${lbl[s]||s}</span>`;
 }
 function tbadge(t) { return t==='Planejado'?'<span class="badge b-plan">📋 Planejado</span>':'<span class="badge b-urg">⚡ Urgente</span>'; }
@@ -757,7 +1120,7 @@ setInterval(updClock,1000); updClock();
 
 // ── POPULA SELECTS ────────────────────────────────────────────
 function populaSelects() {
-  ['f-obra','fa-obra','nf-obra'].forEach(id => {
+  ['f-obra','fa-obra','nf-obra','av-obra'].forEach(id => {
     const el=document.getElementById(id); if(!el) return;
     const def = id==='nf-obra' ? '<option value="">Selecione...</option>' : '<option value="">Todas as obras</option>';
     el.innerHTML = def + OBRAS.map(o=>`<option>${o}</option>`).join('');
@@ -776,9 +1139,9 @@ function showTab(id) {
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
-  const tabs=['dashboard','requisicoes','analise','compradores','nova','contatos'];
+  const tabs=['dashboard','requisicoes','analise','compradores','nova','contatos','avaliacao'];
   const i=tabs.indexOf(id); if(i>=0) document.querySelectorAll('nav button')[i].classList.add('active');
-  ({dashboard:renderDash,requisicoes:renderReq,analise:renderAnalise,compradores:renderComps,contatos:renderContatos})[id]?.();
+  ({dashboard:renderDash,requisicoes:renderReq,analise:renderAnalise,compradores:renderComps,contatos:renderContatos,avaliacao:renderAvaliacao})[id]?.();
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────
@@ -961,6 +1324,7 @@ function renderReq() {
     <td>${sbadge(r.status)}</td>
     <td class="nwrap" style="font-size:12px;color:${isLate(r)?'var(--dan)':'var(--mut2)'}">${fmt(r.prazo)}</td>
     <td class="nwrap" style="font-size:12px;color:var(--acc3)">${fmt(r.fechou)}</td>
+    <td style="max-width:180px"><textarea onblur="salvarObsInline('${r.id}',this.value)" style="background:var(--sur2);border:1px solid var(--bor);border-radius:6px;color:var(--txt);font-family:var(--fb);font-size:11px;padding:5px 8px;width:100%;min-height:36px;resize:vertical;outline:none" placeholder="Observações...">${r.obs||''}</textarea></td>
     <td style="display:flex;gap:5px">
       <button class="btn btn-ghost btn-xs" onclick="openUpd('${r.id}')">✏</button>
       <button class="btn btn-xs" style="background:#4f8ef718;color:var(--acc2);border:1px solid #4f8ef730" onclick="duplicarReq('${r.id}')" title="Duplicar requisição">⧉</button>
@@ -1016,6 +1380,13 @@ function excluirSelecionadas() {
   reqs = reqs.filter(r => !selectedIds.has(r.id));
   selectedIds.clear();
   save(); renderReq(); renderDash();
+}
+
+function salvarObsInline(id, valor) {
+  const r = reqs.find(x=>x.id===id);
+  if (!r) return;
+  r.obs = valor;
+  save();
 }
 
 function excluirReq(id) {
@@ -1358,15 +1729,13 @@ function salvarReq() {
 
   // handle manual ID
   let idRaw = (document.getElementById('nf-id')?.value||'').trim();
-  let id;
-  if (idRaw) {
-    // normalize: if only digits, prefix REQ-
-    id = /^\d+$/.test(idRaw) ? 'REQ-' + String(idRaw).padStart(3,'0') : idRaw.toUpperCase();
-    if (reqs.find(x=>x.id===id)) {
-      msg.style.color='var(--dan)'; msg.textContent=`⚠ Nº ${id} já existe. Escolha outro.`; return;
-    }
-  } else {
-    id = nextId();
+  if (!idRaw) {
+    msg.style.color='var(--dan)'; msg.textContent='⚠ Informe o Nº da Requisição.'; return;
+  }
+  // Usa exatamente o que o usuário digitou, sem adicionar prefixo
+  let id = idRaw;
+  if (reqs.find(x=>x.id===id)) {
+    msg.style.color='var(--dan)'; msg.textContent=`⚠ Nº ${id} já existe. Escolha outro.`; return;
   }
 
   const r={
@@ -1830,9 +2199,691 @@ function restaurarJSON(event) {
   event.target.value = '';
 }
 
+// ── AVALIAÇÃO DE DESEMPENHO ───────────────────────────────────
+const AV_CRITERIOS = ['Pontualidade','Postura','Comunicação','Produtividade','Trabalho em Equipe'];
+let avaliacoes = JSON.parse(localStorage.getItem('av_avaliacoes') || '[]');
+let colabsAv = JSON.parse(localStorage.getItem('av_colabs') || '[]');
+
+function saveAvaliacoes() {
+  localStorage.setItem('av_avaliacoes', JSON.stringify(avaliacoes));
+  db.collection('dados').doc('avaliacoes').set({ list: avaliacoes })
+    .then(()=>setSyncStatus('ok')).catch(()=>setSyncStatus('error'));
+}
+function saveColabsAv() {
+  localStorage.setItem('av_colabs', JSON.stringify(colabsAv));
+  db.collection('config').doc('colabsAv').set({ list: colabsAv })
+    .then(()=>setSyncStatus('ok')).catch(()=>setSyncStatus('error'));
+}
+
+// Carrega avaliações do Firebase no init
+async function initAvaliacoes() {
+  try {
+    const snapAv = await db.collection('dados').doc('avaliacoes').get();
+    if (snapAv.exists && snapAv.data().list) { avaliacoes = snapAv.data().list; localStorage.setItem('av_avaliacoes', JSON.stringify(avaliacoes)); }
+    const snapCo = await db.collection('config').doc('colabsAv').get();
+    if (snapCo.exists && snapCo.data().list) { colabsAv = snapCo.data().list; localStorage.setItem('av_colabs', JSON.stringify(colabsAv)); }
+    db.collection('dados').doc('avaliacoes').onSnapshot(snap => {
+      if (snap.exists && snap.data().list) { avaliacoes = snap.data().list; localStorage.setItem('av_avaliacoes', JSON.stringify(avaliacoes)); if(document.getElementById('tab-avaliacao').classList.contains('active')) renderAvaliacao(); }
+    });
+    db.collection('config').doc('colabsAv').onSnapshot(snap => {
+      if (snap.exists && snap.data().list) { colabsAv = snap.data().list; localStorage.setItem('av_colabs', JSON.stringify(colabsAv)); populaSelectsAv(); }
+    });
+  } catch(e) { console.warn('Avaliações offline', e); }
+}
+
+function populaSelectsAv() {
+  ['av-colab','av-f-colab'].forEach(id => {
+    const el = document.getElementById(id); if(!el) return;
+    const def = id==='av-f-colab' ? '<option value="">Todos os colaboradores</option>' : '<option value="">Selecione...</option>';
+    el.innerHTML = def + colabsAv.map(c=>`<option value="${c.id}">${c.nome}${c.cargo?' — '+c.cargo:''}</option>`).join('');
+    el.innerHTML += id==='av-colab' ? '<option value="__novo__">+ Cadastrar novo colaborador</option>' : '';
+  });
+}
+
+function openModalAvaliacao(editId) {
+  const av = editId ? avaliacoes.find(a=>a.id===editId) : null;
+  document.getElementById('av-edit-id').value = editId||'';
+  document.getElementById('av-modal-title').textContent = av ? 'Editar Avaliação' : 'Nova Avaliação';
+  document.getElementById('av-data').value = av ? av.data : new Date().toISOString().slice(0,10);
+  document.getElementById('av-obs').value = av ? av.obs : '';
+  document.getElementById('av-msg').textContent = '';
+  populaSelectsAv();
+  if(av) document.getElementById('av-colab').value = av.colabId;
+
+  // Gera estrelas para cada critério
+  const cont = document.getElementById('av-criterios');
+  cont.innerHTML = AV_CRITERIOS.map(c => {
+    const nota = av ? (av.notas[c]||0) : 0;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:8px 12px;background:var(--sur3);border-radius:8px">
+      <span style="font-size:13px;font-weight:600;min-width:160px">${c}</span>
+      <div class="star-group" data-crit="${c}">
+        ${[1,2,3,4,5].map(n=>`<span class="star" data-val="${n}" onclick="setStars('${c}',${n})" style="font-size:24px;cursor:pointer;transition:transform .1s;${n<=nota?'color:#f5a623':'color:#2e3450'}" onmouseover="hoverStars('${c}',${n})" onmouseout="unhoverStars('${c}')">★</span>`).join('')}
+      </div>
+      <span id="av-nota-${c.replace(/\s/g,'_')}" style="font-size:13px;font-weight:700;color:var(--acc);min-width:30px;text-align:right">${nota>0?nota+'/5':''}</span>
+    </div>`;
+  }).join('');
+
+  // Restaura notas se editando
+  if(av) AV_CRITERIOS.forEach(c=>setStars(c, av.notas[c]||0, true));
+
+  document.getElementById('modal-avaliacao').classList.add('open');
+  document.getElementById('av-colab').onchange = function() {
+    if(this.value==='__novo__') { closeModal('modal-avaliacao'); openModalColabAv(); }
+  };
+}
+
+function setStars(crit, val, silent) {
+  const group = document.querySelector(`.star-group[data-crit="${crit}"]`); if(!group) return;
+  group.querySelectorAll('.star').forEach(s => { s.style.color = parseInt(s.dataset.val)<=val ? '#f5a623' : '#2e3450'; });
+  const lbl = document.getElementById('av-nota-'+crit.replace(/\s/g,'_'));
+  if(lbl) lbl.textContent = val>0 ? val+'/5' : '';
+  if(!silent) group.dataset.selected = val;
+  else group.dataset.selected = val;
+}
+function hoverStars(crit, val) {
+  const group = document.querySelector(`.star-group[data-crit="${crit}"]`); if(!group) return;
+  group.querySelectorAll('.star').forEach(s => { s.style.color = parseInt(s.dataset.val)<=val ? '#ffca28' : '#2e3450'; });
+}
+function unhoverStars(crit) {
+  const group = document.querySelector(`.star-group[data-crit="${crit}"]`); if(!group) return;
+  const sel = parseInt(group.dataset.selected)||0;
+  group.querySelectorAll('.star').forEach(s => { s.style.color = parseInt(s.dataset.val)<=sel ? '#f5a623' : '#2e3450'; });
+}
+
+function salvarAvaliacao() {
+  const colabId = document.getElementById('av-colab').value;
+  const data = document.getElementById('av-data').value;
+  const obs = document.getElementById('av-obs').value;
+  const msg = document.getElementById('av-msg');
+  if(!colabId||colabId==='__novo__') { msg.style.color='var(--dan)'; msg.textContent='⚠ Selecione um colaborador.'; return; }
+  if(!data) { msg.style.color='var(--dan)'; msg.textContent='⚠ Informe a data.'; return; }
+
+  const notas = {};
+  let todasPreenchidas = true;
+  AV_CRITERIOS.forEach(c => {
+    const group = document.querySelector(`.star-group[data-crit="${c}"]`);
+    const val = parseInt(group?.dataset.selected)||0;
+    notas[c] = val;
+    if(val===0) todasPreenchidas = false;
+  });
+  if(!todasPreenchidas) { msg.style.color='var(--warn)'; msg.textContent='⚠ Avalie todos os critérios.'; return; }
+
+  const colab = colabsAv.find(c=>c.id===colabId);
+  const media = (Object.values(notas).reduce((s,n)=>s+n,0)/AV_CRITERIOS.length).toFixed(1);
+  const editId = document.getElementById('av-edit-id').value;
+
+  if(editId) {
+    const idx = avaliacoes.findIndex(a=>a.id===editId);
+    avaliacoes[idx] = {...avaliacoes[idx], colabId, colabNome:colab.nome, data, notas, media:parseFloat(media), obs};
+  } else {
+    avaliacoes.push({ id:'AV-'+Date.now(), colabId, colabNome:colab.nome, data, notas, media:parseFloat(media), obs });
+  }
+  saveAvaliacoes();
+  msg.style.color='var(--acc3)'; msg.textContent='✅ Salvo!';
+  setTimeout(()=>{ closeModal('modal-avaliacao'); renderAvaliacao(); }, 800);
+}
+
+function excluirAvaliacao(id) {
+  if(!confirm('Excluir esta avaliação?')) return;
+  avaliacoes = avaliacoes.filter(a=>a.id!==id);
+  saveAvaliacoes(); renderAvaliacao();
+}
+
+function openModalColabAv() {
+  document.getElementById('av-nc-nome').value='';
+  document.getElementById('av-nc-cargo').value='';
+  document.getElementById('av-nc-msg').textContent='';
+  document.getElementById('modal-av-colab').classList.add('open');
+}
+function salvarColabAv() {
+  const nome = document.getElementById('av-nc-nome').value.trim();
+  const msg = document.getElementById('av-nc-msg');
+  if(!nome) { msg.style.color='var(--dan)'; msg.textContent='⚠ Informe o nome.'; return; }
+  colabsAv.push({ id:'COL-'+Date.now(), nome, cargo: document.getElementById('av-nc-cargo').value.trim() });
+  saveColabsAv(); populaSelectsAv();
+  msg.style.color='var(--acc3)'; msg.textContent='✅ Cadastrado!';
+  setTimeout(()=>{ closeModal('modal-av-colab'); openModalAvaliacao(); }, 800);
+}
+
+function renderAvaliacao() {
+  populaSelectsAv();
+  const fColab = document.getElementById('av-f-colab')?.value||'';
+  const d = avaliacoes.filter(a=> !fColab || a.colabId===fColab);
+  document.getElementById('av-pill').textContent = d.length;
+
+  // Cards de média por colaborador
+  const colabMap = {};
+  d.forEach(a=>{ if(!colabMap[a.colabNome]) colabMap[a.colabNome]=[]; colabMap[a.colabNome].push(a.media); });
+  document.getElementById('av-cards').innerHTML = Object.entries(colabMap).map(([nome,medias])=>{
+    const avg = (medias.reduce((s,n)=>s+n,0)/medias.length).toFixed(1);
+    const cor = avg>=4?'var(--acc3)':avg>=3?'var(--warn)':'var(--dan)';
+    const stars = [1,2,3,4,5].map(n=>`<span style="color:${n<=Math.round(avg)?'#f5a623':'#2e3450'}">★</span>`).join('');
+    return `<div class="sc c4"><div class="sc-lbl">${nome}</div><div class="sc-val" style="color:${cor};font-size:24px">${avg}</div><div style="font-size:18px;margin-top:4px">${stars}</div><div class="sc-sub">${medias.length} avaliação(ões)</div></div>`;
+  }).join('');
+
+  // Tabela
+  const tb = document.getElementById('tb-avaliacao');
+  if(!d.length) { tb.innerHTML='<tr><td colspan="10" class="empty"><div class="eico">📋</div>Nenhuma avaliação registrada</td></tr>'; return; }
+  tb.innerHTML = [...d].reverse().map(a=>{
+    const stars = n => [1,2,3,4,5].map(i=>`<span style="color:${i<=n?'#f5a623':'#2e3450'}">★</span>`).join('');
+    const cor = a.media>=4?'var(--acc3)':a.media>=3?'var(--warn)':'var(--dan)';
+    return `<tr>
+      <td style="font-size:12px;white-space:nowrap">${fmt(a.data)}</td>
+      <td style="font-weight:600">${a.colabNome}</td>
+      ${AV_CRITERIOS.map(c=>`<td style="white-space:nowrap">${stars(a.notas[c]||0)}</td>`).join('')}
+      <td style="font-weight:700;color:${cor};font-size:14px">${a.media}⭐</td>
+      <td style="font-size:12px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${a.obs||''}">${a.obs||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-xs" onclick="openModalAvaliacao('${a.id}')">✏</button>
+        <button class="btn btn-xs" style="background:#f04f4f18;color:var(--dan);border:1px solid #f04f4f30" onclick="excluirAvaliacao('${a.id}')">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function exportExcelAvaliacao() {
+  if(!avaliacoes.length) { alert('Sem avaliações para exportar.'); return; }
+  const rows = avaliacoes.map(a=>({
+    'Data': fmt(a.data), 'Colaborador': a.colabNome,
+    ...Object.fromEntries(AV_CRITERIOS.map(c=>[c, a.notas[c]+'/5'])),
+    'Média': a.media, 'Comentários': a.obs||''
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = Object.keys(rows[0]).map(k=>({wch:Math.max(k.length,...rows.map(r=>String(r[k]||'').length))+2}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Avaliações');
+  XLSX.writeFile(wb, `Avaliacoes_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// ── AVALIAÇÃO DE DESEMPENHO ───────────────────────────────────
+let avaliados = [];
+
+function saveAvaliados() {
+  localStorage.setItem('av_v1', JSON.stringify(avaliados));
+  setSyncStatus('saving');
+  db.collection('dados').doc('avaliados').set({ list: avaliados })
+    .then(()=>setSyncStatus('ok'))
+    .catch(()=>setSyncStatus('error'));
+}
+
+function starHTML(criterio, id, val) {
+  return [1,2,3,4,5].map(n=>`
+    <span onclick="setNota('${id}','${criterio}',${n})" 
+      style="cursor:pointer;font-size:18px;color:${n<=(val||0)?'#f5a623':'#2e3450'};transition:color .15s"
+      onmouseover="hoverStar(this,${n},'${id}','${criterio}')"
+      onmouseout="renderAvaliacao()">★</span>`).join('');
+}
+
+window.hoverStar = function(el, n, id, criterio) {
+  const row = document.getElementById('av-row-'+id);
+  if (!row) return;
+  row.querySelectorAll('.star-'+criterio).forEach((s,i)=>{
+    s.style.color = i<n ? '#f5a623' : '#2e3450';
+  });
+}
+
+window.setNota = function(id, criterio, val) {
+  const av = avaliados.find(a=>a.id===id);
+  if (!av) return;
+  if (!av.notas) av.notas = {};
+  av.notas[criterio] = val;
+  saveAvaliados();
+  renderAvaliacao();
+}
+
+window.setComentario = function(id, val) {
+  const av = avaliados.find(a=>a.id===id);
+  if (!av) return;
+  av.comentario = val;
+  saveAvaliados();
+}
+
+window.adicionarAvaliado = function() {
+  const nome = document.getElementById('av-nome').value.trim();
+  const cargo = document.getElementById('av-cargo').value.trim();
+  const obra = document.getElementById('av-obra').value;
+  const msg = document.getElementById('av-msg');
+  if (!nome) { msg.style.color='var(--dan)'; msg.textContent='⚠ Informe o nome.'; return; }
+  if (avaliados.find(a=>a.nome===nome)) { msg.style.color='var(--dan)'; msg.textContent='⚠ Colaborador já cadastrado.'; return; }
+  avaliados.push({ id:'av_'+Date.now(), nome, cargo, obra, notas:{}, comentario:'' });
+  saveAvaliados();
+  document.getElementById('av-nome').value='';
+  document.getElementById('av-cargo').value='';
+  msg.style.color='var(--acc3)'; msg.textContent='✅ '+nome+' adicionado!';
+  setTimeout(()=>msg.textContent='', 3000);
+  renderAvaliacao();
+}
+
+window.excluirAvaliado = function(id) {
+  const av = avaliados.find(a=>a.id===id);
+  if (!confirm('Excluir avaliação de "'+av.nome+'"?')) return;
+  avaliados = avaliados.filter(a=>a.id!==id);
+  saveAvaliados(); renderAvaliacao();
+}
+
+function mediaNotas(notas) {
+  const vals = Object.values(notas||{}).filter(v=>v>0);
+  if (!vals.length) return null;
+  return (vals.reduce((s,v)=>s+v,0)/vals.length).toFixed(1);
+}
+
+function renderAvaliacao() {
+  document.getElementById('av-pill').textContent = avaliados.length;
+  const criterios = ['pontualidade','postura','comunicacao','produtividade'];
+  const tb = document.getElementById('tb-avaliacao');
+
+  if (!avaliados.length) {
+    tb.innerHTML='<tr><td colspan="10" class="empty"><div class="eico">⭐</div>Nenhum colaborador cadastrado</td></tr>';
+    document.getElementById('av-cards').innerHTML=''; return;
+  }
+
+  tb.innerHTML = avaliados.map(av => {
+    const media = mediaNotas(av.notas);
+    const mediaColor = !media?'var(--mut2)':media>=4?'var(--acc3)':media>=3?'var(--warn)':'var(--dan)';
+    return `<tr id="av-row-${av.id}">
+      <td style="font-weight:600;font-size:13px">${av.nome}</td>
+      <td style="font-size:12px;color:var(--mut2)">${av.cargo||'—'}</td>
+      <td style="font-size:12px">${av.obra||'—'}</td>
+      ${criterios.map(c=>`
+        <td style="text-align:center">
+          <div style="display:flex;justify-content:center;gap:1px">
+            ${[1,2,3,4,5].map(n=>`<span class="star-${c}" onclick="setNota('${av.id}','${c}',${n})"
+              onmouseover="hoverStar(this,${n},'${av.id}','${c}')"
+              onmouseout="renderAvaliacao()"
+              style="cursor:pointer;font-size:20px;color:${n<=(av.notas?.[c]||0)?'#f5a623':'#2e3450'};transition:color .15s">★</span>`).join('')}
+          </div>
+        </td>`).join('')}
+      <td style="text-align:center;font-family:var(--fh);font-size:20px;font-weight:800;color:${mediaColor}">
+        ${media||'—'}
+      </td>
+      <td><input type="text" value="${av.comentario||''}" placeholder="Comentários..." 
+        onchange="setComentario('${av.id}',this.value)"
+        style="background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:5px 8px;font-size:11px;color:var(--txt);width:160px"></td>
+      <td style="text-align:center">
+        <button class="btn btn-xs" style="background:#f04f4f18;color:var(--dan);border:1px solid #f04f4f30" onclick="excluirAvaliado('${av.id}')">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Cards resumo
+  const total = avaliados.length;
+  const comNota = avaliados.filter(a=>Object.values(a.notas||{}).length>0).length;
+  const medias = avaliados.map(a=>parseFloat(mediaNotas(a.notas))).filter(m=>!isNaN(m));
+  const mediaGeral = medias.length ? (medias.reduce((s,v)=>s+v,0)/medias.length).toFixed(1) : '—';
+  const destaque = avaliados.filter(a=>parseFloat(mediaNotas(a.notas))>=4).length;
+  const atencao = avaliados.filter(a=>{ const m=parseFloat(mediaNotas(a.notas)); return !isNaN(m)&&m<3; }).length;
+
+  document.getElementById('av-cards').innerHTML = `
+    <div class="sc c5"><div class="sc-lbl">Total</div><div class="sc-val">${total}</div><div class="sc-sub">colaboradores</div></div>
+    <div class="sc c4"><div class="sc-lbl">Avaliados</div><div class="sc-val">${comNota}</div><div class="sc-sub">com nota</div></div>
+    <div class="sc c1"><div class="sc-lbl">Média Geral</div><div class="sc-val" style="color:var(--acc)">${mediaGeral}</div><div class="sc-sub">de 5 estrelas</div></div>
+    <div class="sc c4"><div class="sc-lbl">Destaque</div><div class="sc-val" style="color:var(--acc3)">${destaque}</div><div class="sc-sub">média ≥ 4</div></div>
+    <div class="sc c3"><div class="sc-lbl">Atenção</div><div class="sc-val" style="color:var(--dan)">${atencao}</div><div class="sc-sub">média < 3</div></div>`;
+}
+
+// ── AVALIAÇÃO DE DESEMPENHO ───────────────────────────────────
+const AV_CRITERIOS = ['Pontualidade','Postura','Comunicação','Proatividade','Trabalho em Equipe'];
+let avaliacoes = JSON.parse(localStorage.getItem('av_v1') || '[]');
+
+function saveAvaliacoes() {
+  localStorage.setItem('av_v1', JSON.stringify(avaliacoes));
+  setSyncStatus('saving');
+  db.collection('dados').doc('avaliacoes').set({ list: avaliacoes })
+    .then(()=>setSyncStatus('ok'))
+    .catch(()=>setSyncStatus('error'));
+}
+
+// Carrega avaliações do Firebase no init
+async function initAvaliacoes() {
+  try {
+    const snap = await db.collection('dados').doc('avaliacoes').get();
+    if (snap.exists && snap.data().list && snap.data().list.length > 0) {
+      avaliacoes = snap.data().list;
+      localStorage.setItem('av_v1', JSON.stringify(avaliacoes));
+    }
+    db.collection('dados').doc('avaliacoes').onSnapshot(snap => {
+      if (snap.exists && snap.data().list && snap.data().list.length > 0) {
+        avaliacoes = snap.data().list;
+        localStorage.setItem('av_v1', JSON.stringify(avaliacoes));
+        if (document.getElementById('tab-avaliacao').classList.contains('active')) renderAvaliacoes();
+      }
+    });
+  } catch(e) { console.warn('Avaliações offline'); }
+}
+
+function nextAvId() {
+  const nums = avaliacoes.map(a=>parseInt(a.id.replace('AV-',''))).filter(n=>!isNaN(n));
+  return 'AV-' + String((nums.length ? Math.max(...nums) : 0) + 1).padStart(3,'0');
+}
+
+function starHTML(val, name, readonly) {
+  let html = `<div style="display:flex;gap:3px;align-items:center">`;
+  for (let i=1; i<=5; i++) {
+    const filled = i <= val;
+    if (readonly) {
+      html += `<span style="font-size:18px;color:${filled?'#f5a623':'#333'};line-height:1">★</span>`;
+    } else {
+      html += `<span class="star-btn" data-field="${name}" data-val="${i}" onclick="setStar('${name}',${i})" 
+        style="font-size:22px;cursor:pointer;color:${filled?'#f5a623':'#444'};line-height:1;transition:color .15s"
+        onmouseover="hoverStar('${name}',${i})" onmouseout="unhoverStar('${name}')">★</span>`;
+    }
+  }
+  html += `<span style="font-size:11px;color:var(--mut2);margin-left:6px">${val}/5</span></div>`;
+  return html;
+}
+
+function setStar(field, val) {
+  document.getElementById('av-star-'+field).dataset.val = val;
+  renderStarField(field, val);
+}
+function hoverStar(field, val) {
+  document.querySelectorAll(`[data-field="${field}"].star-btn`).forEach(s => {
+    s.style.color = parseInt(s.dataset.val) <= val ? '#f5a623' : '#444';
+  });
+}
+function unhoverStar(field) {
+  const cur = parseInt(document.getElementById('av-star-'+field)?.dataset.val || 0);
+  renderStarField(field, cur);
+}
+function renderStarField(field, val) {
+  document.querySelectorAll(`[data-field="${field}"].star-btn`).forEach(s => {
+    s.style.color = parseInt(s.dataset.val) <= val ? '#f5a623' : '#444';
+  });
+}
+
+function openModalAvaliacao(id) {
+  const a = id ? avaliacoes.find(x=>x.id===id) : null;
+  document.getElementById('av-edit-id').value = id || '';
+  document.getElementById('av-modal-title').textContent = a ? '✏ Editar Avaliação' : '⭐ Novo Colaborador';
+  document.getElementById('av-nome').value = a ? a.nome : '';
+  document.getElementById('av-cargo').value = a ? (a.cargo||'') : '';
+  document.getElementById('av-obs').value = a ? (a.obs||'') : '';
+  // popula obra
+  const sel = document.getElementById('av-obra');
+  sel.innerHTML = '<option value="">Selecione...</option>' + OBRAS.map(o=>`<option>${o}</option>`).join('');
+  if (a) sel.value = a.obra || '';
+  // renderiza critérios com estrelas
+  const cont = document.getElementById('av-criterios');
+  cont.innerHTML = AV_CRITERIOS.map(c => {
+    const val = a ? (a.notas?.[c] || 0) : 0;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bor)">
+      <span style="font-size:13px;font-weight:500;min-width:160px">${c}</span>
+      <div id="av-star-${c}" data-val="${val}" style="display:flex;gap:3px">
+        ${[1,2,3,4,5].map(i=>`<span class="star-btn" data-field="${c}" data-val="${i}" onclick="setStar('${encodeURIComponent(c)}',${i})"
+          style="font-size:24px;cursor:pointer;color:${i<=val?'#f5a623':'#444'};line-height:1;transition:color .15s"
+          onmouseover="hoverStar('${c}',${i})" onmouseout="unhoverStar('${c}')">★</span>`).join('')}
+        <span style="font-size:11px;color:var(--mut2);margin-left:6px;min-width:25px">${val}/5</span>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('av-msg').textContent = '';
+  document.getElementById('modal-av').classList.add('open');
+}
+
+function salvarAvaliacao() {
+  const nome = document.getElementById('av-nome').value.trim();
+  const msg = document.getElementById('av-msg');
+  if (!nome) { msg.style.color='var(--dan)'; msg.textContent='⚠ Informe o nome.'; return; }
+  const notas = {};
+  AV_CRITERIOS.forEach(c => {
+    notas[c] = parseInt(document.getElementById('av-star-'+c)?.dataset.val || 0);
+  });
+  const media = (Object.values(notas).reduce((s,v)=>s+v,0) / AV_CRITERIOS.length).toFixed(1);
+  const editId = document.getElementById('av-edit-id').value;
+  const av = {
+    id: editId || nextAvId(),
+    nome, notas, media: parseFloat(media),
+    cargo: document.getElementById('av-cargo').value.trim(),
+    obra: document.getElementById('av-obra').value,
+    obs: document.getElementById('av-obs').value.trim(),
+    data: new Date().toLocaleDateString('pt-BR')
+  };
+  if (editId) {
+    const idx = avaliacoes.findIndex(x=>x.id===editId);
+    avaliacoes[idx] = av;
+  } else {
+    avaliacoes.push(av);
+  }
+  saveAvaliacoes();
+  msg.style.color='var(--acc3)'; msg.textContent='✅ Salvo!';
+  setTimeout(()=>{ closeModal('modal-av'); renderAvaliacoes(); }, 800);
+}
+
+function excluirAvaliacao(id) {
+  const a = avaliacoes.find(x=>x.id===id);
+  if (!confirm(`Excluir avaliação de "${a.nome}"?`)) return;
+  avaliacoes = avaliacoes.filter(x=>x.id!==id);
+  saveAvaliacoes(); renderAvaliacoes();
+}
+
+function mediaColor(m) {
+  return m >= 4 ? 'var(--acc3)' : m >= 3 ? 'var(--warn)' : 'var(--dan)';
+}
+
+function renderAvaliacoes() {
+  document.getElementById('av-pill').textContent = avaliacoes.length;
+  document.getElementById('av-count').textContent = `${avaliacoes.length} colaborador(es) avaliado(s)`;
+
+  // Cards
+  const grid = document.getElementById('av-grid');
+  grid.innerHTML = avaliacoes.map(a => {
+    const mc = mediaColor(a.media);
+    return `<div class="cmp-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <div style="font-family:var(--fh);font-weight:700;font-size:15px">${a.nome}</div>
+          <div style="font-size:11px;color:var(--mut2);margin-top:2px">${a.cargo||'—'} ${a.obra?'· '+a.obra:''}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:2px">Avaliado em ${a.data||'—'}</div>
+        </div>
+        <div style="text-align:center;background:var(--sur2);border-radius:10px;padding:8px 14px">
+          <div style="font-family:var(--fh);font-size:26px;font-weight:800;color:${mc}">${a.media}</div>
+          <div style="font-size:9px;color:var(--mut2);text-transform:uppercase">média</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+        ${AV_CRITERIOS.map(c=>`
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:11px;color:var(--mut2);min-width:140px">${c}</span>
+            ${starHTML(a.notas?.[c]||0,'',true)}
+          </div>`).join('')}
+      </div>
+      ${a.obs?`<div style="font-size:11px;color:var(--mut2);background:var(--sur2);border-radius:8px;padding:8px 10px;margin-bottom:10px">"${a.obs}"</div>`:''}
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-xs" onclick="openModalAvaliacao('${a.id}')">✏ Editar</button>
+        <button class="btn btn-xs" style="background:#f04f4f18;color:var(--dan);border:1px solid #f04f4f30" onclick="excluirAvaliacao('${a.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('') || '<div class="empty"><div class="eico">⭐</div>Nenhuma avaliação ainda. Clique em "+ Novo Colaborador".</div>';
+
+  // Tabela resumo
+  const tb = document.getElementById('tb-av');
+  tb.innerHTML = avaliacoes.map(a => {
+    const mc = mediaColor(a.media);
+    return `<tr>
+      <td><strong>${a.nome}</strong><br><span style="font-size:10px;color:var(--mut2)">${a.cargo||'—'}</span></td>
+      ${AV_CRITERIOS.map(c=>`<td style="text-align:center">${starHTML(a.notas?.[c]||0,'',true)}</td>`).join('')}
+      <td style="text-align:center;font-family:var(--fh);font-size:20px;font-weight:800;color:${mc}">${a.media}</td>
+      <td style="font-size:11px;max-width:180px;color:var(--mut2)">${a.obs||'—'}</td>
+      <td>
+        <button class="btn btn-ghost btn-xs" onclick="openModalAvaliacao('${a.id}')">✏</button>
+        <button class="btn btn-xs" style="background:#f04f4f18;color:var(--dan);border:1px solid #f04f4f30;margin-left:4px" onclick="excluirAvaliacao('${a.id}')">🗑</button>
+      </td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="9" class="empty">Nenhuma avaliação.</td></tr>';
+}
+
+function exportExcelAv() {
+  if (!avaliacoes.length) { alert('Nenhuma avaliação para exportar.'); return; }
+  const rows = avaliacoes.map(a => {
+    const r = { 'ID':a.id, 'Colaborador':a.nome, 'Cargo':a.cargo||'', 'Obra':a.obra||'', 'Data':a.data||'' };
+    AV_CRITERIOS.forEach(c => r[c] = a.notas?.[c] || 0);
+    r['Média'] = a.media;
+    r['Comentários'] = a.obs || '';
+    return r;
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = Object.keys(rows[0]).map(k=>({wch:Math.max(k.length,...rows.map(r=>String(r[k]||'').length))+2}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Avaliações');
+  XLSX.writeFile(wb, `Avaliacoes_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// ── AVALIAÇÃO DE DESEMPENHO ───────────────────────────────────
+let colaboradores = JSON.parse(localStorage.getItem('av_colab_v1') || '[]');
+
+function saveColaboradores() {
+  localStorage.setItem('av_colab_v1', JSON.stringify(colaboradores));
+  setSyncStatus('saving');
+  db.collection('dados').doc('colaboradores').set({ list: colaboradores })
+    .then(()=>setSyncStatus('ok'))
+    .catch(()=>setSyncStatus('error'));
+}
+
+// Carregar colaboradores do Firebase no init
+async function loadColaboradores() {
+  try {
+    const snap = await db.collection('dados').doc('colaboradores').get();
+    if (snap.exists && snap.data().list && snap.data().list.length > 0) {
+      colaboradores = snap.data().list;
+      localStorage.setItem('av_colab_v1', JSON.stringify(colaboradores));
+    }
+  } catch(e) {}
+}
+
+function openModalColaborador(id) {
+  const c = id ? colaboradores.find(x=>x.id===id) : null;
+  document.getElementById('mc-edit-id').value = id||'';
+  document.getElementById('mc-title').textContent = c ? 'Editar Colaborador' : 'Novo Colaborador';
+  document.getElementById('mc-nome').value = c ? c.nome : '';
+  document.getElementById('mc-cargo').value = c ? (c.cargo||'') : '';
+  document.getElementById('mc-pont').value = c ? (c.pont||0) : 0;
+  document.getElementById('mc-post').value = c ? (c.post||0) : 0;
+  document.getElementById('mc-com').value = c ? (c.com||0) : 0;
+  document.getElementById('mc-prod').value = c ? (c.prod||0) : 0;
+  document.getElementById('mc-obs').value = c ? (c.obs||'') : '';
+  document.getElementById('mc-msg').textContent = '';
+  renderStars('pont', c ? c.pont||0 : 0);
+  renderStars('post', c ? c.post||0 : 0);
+  renderStars('com', c ? c.com||0 : 0);
+  renderStars('prod', c ? c.prod||0 : 0);
+  document.getElementById('modal-colaborador').classList.add('open');
+}
+
+function renderStars(field, val) {
+  const map = {pont:'stars-pont', post:'stars-post', com:'stars-com', prod:'stars-prod'};
+  const el = document.getElementById(map[field]);
+  if (!el) return;
+  el.innerHTML = [1,2,3,4,5].map(i =>
+    `<span class="star ${i<=val?'on':''}" onclick="setStar('${field}',${i})" onmouseover="hoverStar('${field}',${i})" onmouseout="renderStars('${field}',parseInt(document.getElementById('mc-${field}').value)||0)">★</span>`
+  ).join('');
+}
+
+function setStar(field, val) {
+  document.getElementById('mc-'+field).value = val;
+  renderStars(field, val);
+}
+function hoverStar(field, val) {
+  const map = {pont:'stars-pont', post:'stars-post', com:'stars-com', prod:'stars-prod'};
+  document.getElementById(map[field]).querySelectorAll('.star').forEach((s,i)=>{
+    s.classList.toggle('on', i<val);
+  });
+}
+
+function salvarColaborador() {
+  const nome = document.getElementById('mc-nome').value.trim();
+  const msg = document.getElementById('mc-msg');
+  if (!nome) { msg.style.color='var(--dan)'; msg.textContent='⚠ Informe o nome.'; return; }
+  const pont = parseInt(document.getElementById('mc-pont').value)||0;
+  const post = parseInt(document.getElementById('mc-post').value)||0;
+  const com  = parseInt(document.getElementById('mc-com').value)||0;
+  const prod = parseInt(document.getElementById('mc-prod').value)||0;
+  const media = ((pont+post+com+prod)/4).toFixed(1);
+  const editId = document.getElementById('mc-edit-id').value;
+  if (editId) {
+    const idx = colaboradores.findIndex(x=>x.id===editId);
+    colaboradores[idx] = {...colaboradores[idx], nome, cargo:document.getElementById('mc-cargo').value.trim(), pont, post, com, prod, media:parseFloat(media), obs:document.getElementById('mc-obs').value.trim(), updAt:new Date().toISOString()};
+  } else {
+    colaboradores.push({ id:'AV-'+Date.now(), nome, cargo:document.getElementById('mc-cargo').value.trim(), pont, post, com, prod, media:parseFloat(media), obs:document.getElementById('mc-obs').value.trim(), criadoEm:new Date().toISOString() });
+  }
+  saveColaboradores();
+  closeModal('modal-colaborador');
+  renderAvaliacao();
+  msg.style.color='var(--acc3)'; msg.textContent='✅ Salvo!';
+}
+
+function excluirColaborador(id) {
+  const c = colaboradores.find(x=>x.id===id);
+  if (!confirm(`Excluir "${c.nome}"?`)) return;
+  colaboradores = colaboradores.filter(x=>x.id!==id);
+  saveColaboradores(); renderAvaliacao();
+}
+
+function starsHtml(val) {
+  return [1,2,3,4,5].map(i=>`<span style="color:${i<=val?'#f5a623':'var(--bor2)';font-size:16px">★</span>`).join('');
+}
+
+function mediaColor(m) {
+  if (m>=4) return 'var(--acc3)';
+  if (m>=3) return 'var(--warn)';
+  return 'var(--dan)';
+}
+
+function renderAvaliacao() {
+  document.getElementById('av-pill').textContent = colaboradores.length;
+  document.getElementById('av-count').textContent = colaboradores.length + ' colaborador(es)';
+  const tb = document.getElementById('tb-av');
+  if (!colaboradores.length) {
+    tb.innerHTML='<tr><td colspan="9" class="empty"><div class="eico">👥</div>Nenhum colaborador cadastrado</td></tr>';
+  } else {
+    tb.innerHTML = colaboradores.map(c=>`<tr>
+      <td style="font-weight:600">${c.nome}</td>
+      <td style="font-size:11px;color:var(--mut2)">${c.cargo||'—'}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>`<span style="color:${i<=c.pont?'#f5a623':'var(--bor2)'};font-size:15px">★</span>`).join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>`<span style="color:${i<=c.post?'#f5a623':'var(--bor2)'};font-size:15px">★</span>`).join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>`<span style="color:${i<=c.com?'#f5a623':'var(--bor2)'};font-size:15px">★</span>`).join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>`<span style="color:${i<=c.prod?'#f5a623':'var(--bor2)'};font-size:15px">★</span>`).join('')}</td>
+      <td style="text-align:center;font-family:var(--fh);font-size:18px;font-weight:800;color:${mediaColor(c.media)}">${c.media||'—'}</td>
+      <td style="font-size:11px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${c.obs||''}">${c.obs||'—'}</td>
+      <td style="text-align:center;display:flex;gap:4px;justify-content:center">
+        <button class="btn btn-ghost btn-xs" onclick="openModalColaborador('${c.id}')">✏</button>
+        <button class="btn btn-xs" style="background:#f04f4f18;color:var(--dan);border:1px solid #f04f4f30" onclick="excluirColaborador('${c.id}')">🗑</button>
+      </td>
+    </tr>`).join('');
+  }
+
+  // Ranking
+  const ranking = document.getElementById('av-ranking');
+  const sorted = [...colaboradores].sort((a,b)=>(b.media||0)-(a.media||0));
+  const max = sorted.length ? (sorted[0].media||1) : 1;
+  ranking.innerHTML = sorted.length ? sorted.map((c,i)=>`
+    <div class="bar-row" style="margin-bottom:14px">
+      <div style="min-width:30px;font-family:var(--fh);font-size:16px;font-weight:800;color:${i===0?'#f5a623':i===1?'var(--mut2)':i===2?'#cd7f32':'var(--mut)'}">${i+1}º</div>
+      <div class="bar-label" style="min-width:160px"><div style="font-weight:600">${c.nome}</div><div style="font-size:10px;color:var(--mut2)">${c.cargo||''}</div></div>
+      <div class="bar-track" style="flex:1"><div class="bar-fill" style="width:${(c.media/5)*100}%;background:${mediaColor(c.media)}"></div></div>
+      <div style="min-width:40px;text-align:right;font-weight:700;color:${mediaColor(c.media)}">${c.media||0}</div>
+      <div style="min-width:90px;text-align:right">${[1,2,3,4,5].map(i=>`<span style="color:${i<=Math.round(c.media)?'#f5a623':'var(--bor2)'};font-size:13px">★</span>`).join('')}</div>
+    </div>`).join('') : '<div style="color:var(--mut2);font-size:13px">Nenhum dado para exibir.</div>';
+}
+
+function exportExcelAv() {
+  if (!colaboradores.length) { alert('Nenhum colaborador para exportar.'); return; }
+  const rows = colaboradores.map(c=>({
+    'Nome':c.nome, 'Cargo':c.cargo||'',
+    'Pontualidade':c.pont||0, 'Postura':c.post||0,
+    'Comunicação':c.com||0, 'Produtividade':c.prod||0,
+    'Média':c.media||0, 'Comentários':c.obs||''
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = Object.keys(rows[0]).map(k=>({wch:Math.max(k.length,...rows.map(r=>String(r[k]||'').length))+2}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Avaliação');
+  XLSX.writeFile(wb, `Avaliacao_Desempenho_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
 // ── INIT ──────────────────────────────────────────────────────
 populaSelects();
 initFirebase();
+initAvaliacoes();
 </script>
 </body>
 </html>
