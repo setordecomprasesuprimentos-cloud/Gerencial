@@ -236,6 +236,20 @@ input[type=date]{color-scheme:dark}
     <div style="display:flex;align-items:flex-end;flex-shrink:0"><button class="btn btn-ghost btn-sm" onclick="limparDashF()">✕ Limpar</button></div>
   </div>
   <div class="cards-grid" id="dash-cards"></div>
+  <!-- GRÁFICO GERAL -->
+  <div class="twrap" style="margin-bottom:20px">
+    <div class="twrap-hd">
+      <h3>📊 Visão Geral — Em Aberto · Finalizadas · Urgentes · Planejadas</h3>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <label style="font-size:11px;color:var(--mut2)">Finalizadas — De</label>
+        <input type="date" id="dg-fin-de" onchange="renderGraficoGeral()" style="width:140px;padding:4px 8px;font-size:11px">
+        <label style="font-size:11px;color:var(--mut2)">Até</label>
+        <input type="date" id="dg-fin-ate" onchange="renderGraficoGeral()" style="width:140px;padding:4px 8px;font-size:11px">
+        <button class="btn btn-ghost btn-xs" onclick="limparGraficoGeral()">✕</button>
+      </div>
+    </div>
+    <div style="padding:16px"><canvas id="chart-geral" height="100"></canvas></div>
+  </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
     <div class="twrap">
       <div class="twrap-hd"><h3>🚨 Urgentes / Atrasadas</h3></div>
@@ -894,6 +908,72 @@ function limparDashF() {
   ['df-obra-ms','df-comp-ms','df-status-ms','df-tipo-ms','df-ct-obra-ms'].forEach(msClear);
   renderDash();
 }
+// ── GRÁFICO GERAL DO DASHBOARD ───────────────────────────────
+let _chartGeral = null;
+function limparGraficoGeral() {
+  ['dg-fin-de','dg-fin-ate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  renderGraficoGeral();
+}
+function renderGraficoGeral() {
+  const fde = document.getElementById('dg-fin-de')?.value || '';
+  const fat = document.getElementById('dg-fin-ate')?.value || '';
+  const statusAberto = ['Pendente','Aguardando PGT Cliente','Aguardando Iniciar Obra','Valor S/BDI Abaixo'];
+
+  const emAberto   = reqs.filter(r => statusAberto.includes(r.status)).length;
+  const finalizadas = reqs.filter(r => {
+    if (r.status !== 'Finalizada') return false;
+    if (fde && r.dtab < fde) return false;
+    if (fat && r.dtab > fat) return false;
+    return true;
+  }).length;
+  const urgentes   = reqs.filter(r => r.tipo === 'Urgente').length;
+  const planejadas = reqs.filter(r => r.tipo === 'Planejado').length;
+
+  const ctx = document.getElementById('chart-geral');
+  if (!ctx) return;
+  if (_chartGeral) { _chartGeral.destroy(); _chartGeral = null; }
+
+  _chartGeral = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Em Aberto', 'Finalizadas' + (fde||fat ? ' (filtradas)' : ''), 'Urgentes', 'Planejadas'],
+      datasets: [{
+        data: [emAberto, finalizadas, urgentes, planejadas],
+        backgroundColor: ['#f59e0bcc','#1ec995cc','#f04f4fcc','#4f8ef7cc'],
+        borderRadius: 8, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: { size: 12 }, color: '#8892aa' }, grid: { display: false } },
+        y: { beginAtZero: true, ticks: { stepSize: 1, color: '#8892aa' } }
+      },
+      animation: {
+        onComplete: function() {
+          const chart = this;
+          const ctx2 = chart.ctx;
+          chart.data.datasets.forEach((dataset, i) => {
+            const meta = chart.getDatasetMeta(i);
+            meta.data.forEach((bar, index) => {
+              const value = dataset.data[index];
+              if (!value) return;
+              ctx2.save();
+              ctx2.fillStyle = '#dde1ee';
+              ctx2.font = 'bold 14px sans-serif';
+              ctx2.textAlign = 'center';
+              ctx2.textBaseline = 'bottom';
+              ctx2.fillText(value, bar.x, bar.y - 4);
+              ctx2.restore();
+            });
+          });
+        }
+      }
+    }
+  });
+}
+
 function renderDash() {
   const dfo=document.getElementById('df-obra'); if(dfo){const v=dfo.value;dfo.innerHTML='<option value="">Todas as obras</option>'+OBRAS.map(o=>`<option>${o}</option>`).join('');dfo.value=v;}
   const dfc=document.getElementById('df-comp'); if(dfc){const v=dfc.value;dfc.innerHTML='<option value="">Todos</option>'+COMPS.map(c=>`<option>${c}</option>`).join('');dfc.value=v;}
@@ -956,6 +1036,7 @@ function renderDash() {
     }).join('') : '<tr><td colspan="4" class="empty"><div class="eico">✅</div>Todas contatadas recentemente</td></tr>';
   }
 
+  renderGraficoGeral();
   // semana: contatos dos últimos 7 dias agrupados por dia
   const hoje = new Date();
   const semanaEl = document.getElementById('dash-contatos-semana');
