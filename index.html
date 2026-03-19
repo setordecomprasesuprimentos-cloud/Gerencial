@@ -303,7 +303,25 @@ input[type=date]{color-scheme:dark}
   </div></div>
 </div>
 
-<!-- ANÁLISE POR OBRA -->
+
+<!-- COMPRADORES -->
+<div class="tab-content" id="tab-compradores">
+  <div class="stitle">Desempenho dos Compradores</div>
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+    <button class="btn btn-primary btn-sm" onclick="openAddComp()">+ Novo Comprador</button>
+    <span style="font-size:12px;color:var(--mut2)" id="comp-count"></span>
+  </div>
+  <div class="cmp-grid" id="cmp-grid"></div>
+  <div class="twrap"><div class="twrap-hd"><h3>📊 Distribuição de Carga</h3></div>
+    <div class="tscroll"><table><thead><tr>
+      <th>Comprador</th><th>Total</th><th>Pendentes</th><th>Finalizadas</th>
+      <th>Ag. PGT</th><th>Ag. Obra</th><th>Planejadas</th><th>Urgentes</th><th>Atrasadas</th><th>Taxa Conclusão</th><th>Ação</th>
+    </tr></thead><tbody id="tb-distrib"></tbody></table></div>
+  </div>
+</div>
+
+<!-- NOVA REQUISIÇÃO -->
+  <!-- ANÁLISE POR OBRA -->
 <div class="tab-content" id="tab-analise">
   <div class="stitle">Análise por Obra <span class="pill green">Levantamento</span></div>
   <div class="fbar">
@@ -348,23 +366,6 @@ input[type=date]{color-scheme:dark}
     <div class="ana-card"><h4>👤 Carga por Comprador</h4><canvas id="chart-comp" height="220"></canvas></div>
   </div>
 </div>
-<!-- COMPRADORES -->
-<div class="tab-content" id="tab-compradores">
-  <div class="stitle">Desempenho dos Compradores</div>
-  <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
-    <button class="btn btn-primary btn-sm" onclick="openAddComp()">+ Novo Comprador</button>
-    <span style="font-size:12px;color:var(--mut2)" id="comp-count"></span>
-  </div>
-  <div class="cmp-grid" id="cmp-grid"></div>
-  <div class="twrap"><div class="twrap-hd"><h3>📊 Distribuição de Carga</h3></div>
-    <div class="tscroll"><table><thead><tr>
-      <th>Comprador</th><th>Total</th><th>Pendentes</th><th>Finalizadas</th>
-      <th>Ag. PGT</th><th>Ag. Obra</th><th>Planejadas</th><th>Urgentes</th><th>Atrasadas</th><th>Taxa Conclusão</th><th>Ação</th>
-    </tr></thead><tbody id="tb-distrib"></tbody></table></div>
-  </div>
-</div>
-
-<!-- NOVA REQUISIÇÃO -->
 <div class="tab-content" id="tab-nova">
   <div class="stitle">Nova Requisição</div>
   <div class="twrap" style="padding:24px">
