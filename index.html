@@ -311,6 +311,16 @@ input[type=date]{color-scheme:dark}
 <!-- COMPRADORES -->
 <div class="tab-content" id="tab-compradores">
   <div class="stitle">Desempenho dos Compradores</div>
+  <div class="fbar">
+    <div class="fg"><label>Obra</label><div id="cp-obra-ms"></div></div>
+    <div class="fg"><label>Status</label><div id="cp-status-ms"></div></div>
+    <div class="fg"><label>Tipo</label><div id="cp-tipo-ms"></div></div>
+    <div class="fg"><label>Período — De</label><input type="date" id="cp-de" onchange="renderComps()"></div>
+    <div class="fg"><label>Período — Até</label><input type="date" id="cp-ate" onchange="renderComps()"></div>
+    <div style="display:flex;gap:8px;align-items:flex-end;flex-shrink:0">
+      <button class="btn btn-ghost btn-sm" onclick="limparCompF()">✕ Limpar</button>
+    </div>
+  </div>
   <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
     <button class="btn btn-primary btn-sm" onclick="openAddComp()">+ Novo Comprador</button>
     <span style="font-size:12px;color:var(--mut2)" id="comp-count"></span>
@@ -1521,11 +1531,34 @@ function excluirComp(nome) {
   COMPS = COMPS.filter(c => c !== nome); saveComps(); populaSelects(); renderComps();
 }
 
+function getCompFilt(nome) {
+  const fo  = msVal('cp-obra-ms');
+  const fs  = msVal('cp-status-ms');
+  const ft  = msVal('cp-tipo-ms');
+  const fde = document.getElementById('cp-de')?.value || '';
+  const fat = document.getElementById('cp-ate')?.value || '';
+  return reqs.filter(r => {
+    if (r.comp !== nome) return false;
+    if (fo.length && !fo.includes(r.obra))   return false;
+    if (fs.length && !fs.includes(r.status)) return false;
+    if (ft.length && !ft.includes(r.tipo))   return false;
+    if (fde && r.dtab < fde) return false;
+    if (fat && r.dtab > fat) return false;
+    return true;
+  });
+}
+
+function limparCompF() {
+  ['cp-de','cp-ate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['cp-obra-ms','cp-status-ms','cp-tipo-ms'].forEach(msClear);
+  renderComps();
+}
+
 function renderComps() {
   document.getElementById('comp-count').textContent = `${COMPS.length} comprador(es) cadastrado(s)`;
   document.getElementById('cmp-grid').innerHTML=COMPS.map((nome,i)=>{
     const av=getAvClass(i), ini=getInitial(nome);
-    const d=reqs.filter(r=>r.comp===nome);
+    const d=getCompFilt(nome);
     const fin=d.filter(r=>r.status==='Finalizada').length,pend=d.filter(r=>r.status==='Pendente').length;
     const atr=d.filter(r=>isLate(r)).length,urg=d.filter(r=>r.tipo==='Urgente').length;
     const taxa=d.length?Math.round(fin/d.length*100):0;
@@ -1550,7 +1583,7 @@ function renderComps() {
   }).join('');
 
   document.getElementById('tb-distrib').innerHTML=COMPS.map((nome,i)=>{
-    const d=reqs.filter(r=>r.comp===nome);
+    const d=getCompFilt(nome);
     const pend=d.filter(r=>r.status==='Pendente').length,fin=d.filter(r=>r.status==='Finalizada').length;
     const pgt=d.filter(r=>r.status==='Aguardando PGT Cliente').length,ob=d.filter(r=>r.status==='Aguardando Iniciar Obra').length;
     const pl=d.filter(r=>r.tipo==='Planejado').length,ur=d.filter(r=>r.tipo==='Urgente').length;
@@ -2252,6 +2285,11 @@ function initMultiSelects() {
   createMultiSelect('fa-status-ms',statusOpts,  'Todos status',   renderAnalise);
   createMultiSelect('fa-tipo-ms',  tipoOpts,    'Todos tipos',    renderAnalise);
   createMultiSelect('fa-prio-ms',  prioOpts,    'Todas prio.',    renderAnalise);
+
+  // Compradores
+  createMultiSelect('cp-obra-ms',   obraOpts(),  'Todas as obras', renderComps);
+  createMultiSelect('cp-status-ms', statusOpts,  'Todos status',   renderComps);
+  createMultiSelect('cp-tipo-ms',   tipoOpts,    'Todos tipos',    renderComps);
 
   // Contatos
   createMultiSelect('ct-f-obra-ms', obraOpts(), 'Todas as obras', renderContatos);
