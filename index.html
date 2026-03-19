@@ -233,22 +233,22 @@ input[type=date]{color-scheme:dark}
     <div class="fg"><label>Contatos — De</label><input type="date" id="df-ct-de" onchange="renderDash()"></div>
     <div class="fg"><label>Contatos — Até</label><input type="date" id="df-ct-ate" onchange="renderDash()"></div>
     <div class="fg"><label>Contatos — Obra</label><select id="df-ct-obra" onchange="renderDash()"><option value="">Todas</option></select></div>
+    <div class="fg" style="display:flex;align-items:flex-end">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 12px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;font-size:12px;white-space:nowrap">
+        <input type="checkbox" id="df-aberto" onchange="renderDash()" style="accent-color:var(--acc);width:14px;height:14px">
+        🔓 Sempre incluir em aberto
+      </label>
+    </div>
     <div style="display:flex;align-items:flex-end;flex-shrink:0"><button class="btn btn-ghost btn-sm" onclick="limparDashF()">✕ Limpar</button></div>
   </div>
   <div class="cards-grid" id="dash-cards"></div>
   <!-- GRÁFICO GERAL -->
   <div class="twrap" style="margin-bottom:20px">
     <div class="twrap-hd">
-      <h3>📊 Visão Geral — Em Aberto · Finalizadas · Urgentes · Planejadas</h3>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <label style="font-size:11px;color:var(--mut2)">Finalizadas — De</label>
-        <input type="date" id="dg-fin-de" onchange="renderGraficoGeral()" style="width:140px;padding:4px 8px;font-size:11px">
-        <label style="font-size:11px;color:var(--mut2)">Até</label>
-        <input type="date" id="dg-fin-ate" onchange="renderGraficoGeral()" style="width:140px;padding:4px 8px;font-size:11px">
-        <button class="btn btn-ghost btn-xs" onclick="limparGraficoGeral()">✕</button>
-      </div>
+      <h3>📊 Visão Geral</h3>
+      <span style="font-size:11px;color:var(--mut2)">Em Aberto sempre · Finalizadas pelo filtro de data acima · 🔓 toggle inclui pendentes fora do período</span>
     </div>
-    <div style="padding:16px"><canvas id="chart-geral" height="100"></canvas></div>
+    <div style="padding:12px 16px"><canvas id="chart-geral" height="60"></canvas></div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
     <div class="twrap">
@@ -882,7 +882,17 @@ function getDashFilt() {
   const ft=msVal('df-tipo-ms');
   const fde=document.getElementById('df-de')?.value||'';
   const fat=document.getElementById('df-ate')?.value||'';
+  const aberto=document.getElementById('df-aberto')?.checked||false;
+  const statusAberto=['Pendente','Aguardando PGT Cliente','Aguardando Iniciar Obra','Valor S/BDI Abaixo'];
   return reqs.filter(r=>{
+    const eAberto=statusAberto.includes(r.status);
+    if(aberto&&eAberto){
+      if(fo.length&&!fo.includes(r.obra)) return false;
+      if(fc.length&&!fc.includes(r.comp)) return false;
+      if(fs.length&&!fs.includes(r.status)) return false;
+      if(ft.length&&!ft.includes(r.tipo)) return false;
+      return true;
+    }
     if(fo.length&&!fo.includes(r.obra)) return false;
     if(fc.length&&!fc.includes(r.comp)) return false;
     if(fs.length&&!fs.includes(r.status)) return false;
@@ -906,17 +916,15 @@ function getDashCtFilt() {
 function limparDashF() {
   ['df-de','df-ate','df-ct-de','df-ct-ate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   ['df-obra-ms','df-comp-ms','df-status-ms','df-tipo-ms','df-ct-obra-ms'].forEach(msClear);
+  const cb=document.getElementById('df-aberto');if(cb)cb.checked=false;
   renderDash();
 }
 // ── GRÁFICO GERAL DO DASHBOARD ───────────────────────────────
 let _chartGeral = null;
-function limparGraficoGeral() {
-  ['dg-fin-de','dg-fin-ate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  renderGraficoGeral();
-}
+function limparGraficoGeral() { renderGraficoGeral(); }
 function renderGraficoGeral() {
-  const fde = document.getElementById('dg-fin-de')?.value || '';
-  const fat = document.getElementById('dg-fin-ate')?.value || '';
+  const fde = document.getElementById('df-de')?.value || '';
+  const fat = document.getElementById('df-ate')?.value || '';
   const statusAberto = ['Pendente','Aguardando PGT Cliente','Aguardando Iniciar Obra','Valor S/BDI Abaixo'];
 
   const emAberto   = reqs.filter(r => statusAberto.includes(r.status)).length;
@@ -936,19 +944,24 @@ function renderGraficoGeral() {
   _chartGeral = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: ['Em Aberto', 'Finalizadas' + (fde||fat ? ' (filtradas)' : ''), 'Urgentes', 'Planejadas'],
+      labels: [
+        'Em Aberto (' + emAberto + ')',
+        'Finalizadas' + (fde||fat?' (período)':'') + ' (' + finalizadas + ')',
+        'Urgentes (' + urgentes + ')',
+        'Planejadas (' + planejadas + ')'
+      ],
       datasets: [{
         data: [emAberto, finalizadas, urgentes, planejadas],
         backgroundColor: ['#f59e0bcc','#1ec995cc','#f04f4fcc','#4f8ef7cc'],
-        borderRadius: 8, borderSkipped: false
+        borderRadius: 6, borderSkipped: false, barThickness: 40
       }]
     },
     options: {
       responsive: true,
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { font: { size: 12 }, color: '#8892aa' }, grid: { display: false } },
-        y: { beginAtZero: true, ticks: { stepSize: 1, color: '#8892aa' } }
+        x: { ticks: { font: { size: 11 }, color: '#8892aa' }, grid: { display: false } },
+        y: { display: false, beginAtZero: true }
       },
       animation: {
         onComplete: function() {
@@ -961,7 +974,7 @@ function renderGraficoGeral() {
               if (!value) return;
               ctx2.save();
               ctx2.fillStyle = '#dde1ee';
-              ctx2.font = 'bold 14px sans-serif';
+              ctx2.font = 'bold 16px sans-serif';
               ctx2.textAlign = 'center';
               ctx2.textBaseline = 'bottom';
               ctx2.fillText(value, bar.x, bar.y - 4);
