@@ -37,9 +37,9 @@
       .then(() => {
         window.location.href = "COLE_SEU_LINK_AQUI";
       })
-      .catch(() => {
-        alert("E-mail ou senha incorretos!");
-      });
+      .catch((erro) => {
+  alert(erro.message);
+});
   }
 </script>
 
