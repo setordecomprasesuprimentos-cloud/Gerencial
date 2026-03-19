@@ -167,6 +167,22 @@ input[type=date]{color-scheme:dark}
   main{padding:14px} header{padding:12px 14px} nav{padding:0 12px}
   .cards-grid{grid-template-columns:1fr 1fr}
 }
+
+/* ── MULTI-SELECT DROPDOWN ─────────────────────────────────── */
+.ms-wrap{position:relative;min-width:130px}
+.ms-btn{background:var(--sur2);border:1px solid var(--bor);color:var(--txt);border-radius:8px;padding:8px 12px;font-family:var(--fb);font-size:13px;width:100%;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ms-btn:focus,.ms-btn.open{border-color:var(--acc)}
+.ms-btn .ms-arrow{font-size:9px;flex-shrink:0;transition:transform .2s}
+.ms-btn.open .ms-arrow{transform:rotate(180deg)}
+.ms-dropdown{position:absolute;top:calc(100% + 4px);left:0;min-width:100%;background:var(--sur2);border:1px solid var(--bor2);border-radius:8px;z-index:300;box-shadow:0 8px 24px rgba(0,0,0,.3);overflow:hidden;display:none}
+.ms-dropdown.open{display:block}
+.ms-opt{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:12.5px;transition:background .15s}
+.ms-opt:hover{background:var(--sur3)}
+.ms-opt input{accent-color:var(--acc);width:14px;height:14px;flex-shrink:0;cursor:pointer}
+.ms-opt label{cursor:pointer;flex:1;white-space:nowrap}
+.ms-clear{padding:6px 12px;border-top:1px solid var(--bor);font-size:11px;color:var(--mut2);cursor:pointer;text-align:center}
+.ms-clear:hover{color:var(--acc)}
+
 </style>
 </head>
 <body>
@@ -208,10 +224,10 @@ input[type=date]{color-scheme:dark}
 <div class="tab-content active" id="tab-dashboard">
   <div class="stitle">Painel Geral <span class="pill"><span class="dot"></span>TEMPO REAL</span></div>
   <div class="fbar" style="margin-bottom:18px">
-    <div class="fg"><label>Obra</label><select id="df-obra" onchange="renderDash()"><option value="">Todas as obras</option></select></div>
-    <div class="fg"><label>Comprador</label><select id="df-comp" onchange="renderDash()"><option value="">Todos</option></select></div>
-    <div class="fg"><label>Status</label><select id="df-status" onchange="renderDash()"><option value="">Todos</option><option>Pendente</option><option>Finalizada</option><option>Aguardando PGT Cliente</option><option>Aguardando Iniciar Obra</option><option>Reprovado</option><option>Valor S/BDI Abaixo</option></select></div>
-    <div class="fg"><label>Tipo</label><select id="df-tipo" onchange="renderDash()"><option value="">Todos</option><option>Planejado</option><option>Urgente</option></select></div>
+    <div class="fg"><label>Obra</label><div id="df-obra-ms"></div></div>
+    <div class="fg"><label>Comprador</label><div id="df-comp-ms"></div></div>
+    <div class="fg"><label>Status</label><div id="df-status-ms"></div></div>
+    <div class="fg"><label>Tipo</label><div id="df-tipo-ms"></div></div>
     <div class="fg"><label>Abertura — De</label><input type="date" id="df-de" onchange="renderDash()"></div>
     <div class="fg"><label>Abertura — Até</label><input type="date" id="df-ate" onchange="renderDash()"></div>
     <div class="fg"><label>Contatos — De</label><input type="date" id="df-ct-de" onchange="renderDash()"></div>
@@ -259,22 +275,10 @@ input[type=date]{color-scheme:dark}
   <div class="stitle">Requisições <span class="pill blue" id="req-pill">0</span></div>
   <div class="fbar">
     <div class="fg"><label>Busca</label><input type="text" id="f-busca" placeholder="Nº, obra, material..." oninput="renderReq()"></div>
-    <div class="fg"><label>Obra</label><select id="f-obra" onchange="renderReq()"><option value="">Todas as obras</option></select></div>
-    <div class="fg"><label>Comprador</label>
-      <select id="f-comp" onchange="renderReq()">
-        <option value="">Todos</option>
-      </select>
-    </div>
-    <div class="fg"><label>Status</label>
-      <select id="f-status" onchange="renderReq()">
-        <option value="">Todos</option><option>Pendente</option><option>Finalizada</option>
-        <option>Aguardando PGT Cliente</option><option>Aguardando Iniciar Obra</option>
-        <option>Reprovado</option><option>Valor S/BDI Abaixo</option>
-      </select>
-    </div>
-    <div class="fg"><label>Tipo</label>
-      <select id="f-tipo" onchange="renderReq()"><option value="">Todos</option><option>Planejado</option><option>Urgente</option></select>
-    </div>
+    <div class="fg"><label>Obra</label><div id="f-obra-ms"></div></div>
+    <div class="fg"><label>Comprador</label><div id="f-comp-ms"></div></div>
+    <div class="fg"><label>Status</label><div id="f-status-ms"></div></div>
+    <div class="fg"><label>Tipo</label><div id="f-tipo-ms"></div></div>
     <div class="fg"><label>Abertura — De</label><input type="date" id="f-de" onchange="renderReq()"></div>
     <div class="fg"><label>Abertura — Até</label><input type="date" id="f-ate" onchange="renderReq()"></div>
     <div style="display:flex;gap:8px;align-items:flex-end;flex-shrink:0;padding-bottom:1px">
@@ -325,26 +329,11 @@ input[type=date]{color-scheme:dark}
 <div class="tab-content" id="tab-analise">
   <div class="stitle">Análise por Obra <span class="pill green">Levantamento</span></div>
   <div class="fbar">
-    <div class="fg"><label>Filtrar Obra</label><select id="fa-obra" onchange="renderAnalise()"><option value="">Todas as obras</option></select></div>
-    <div class="fg"><label>Comprador</label><select id="fa-comp" onchange="renderAnalise()"><option value="">Todos</option></select></div>
-    <div class="fg"><label>Status</label>
-      <select id="fa-status" onchange="renderAnalise()">
-        <option value="">Todos</option>
-        <option>Pendente</option><option>Finalizada</option>
-        <option>Aguardando PGT Cliente</option><option>Aguardando Iniciar Obra</option>
-        <option>Reprovado</option><option>Valor S/BDI Abaixo</option>
-      </select>
-    </div>
-    <div class="fg"><label>Tipo</label>
-      <select id="fa-tipo" onchange="renderAnalise()">
-        <option value="">Todos</option><option>Planejado</option><option>Urgente</option>
-      </select>
-    </div>
-    <div class="fg"><label>Prioridade</label>
-      <select id="fa-prio" onchange="renderAnalise()">
-        <option value="">Todas</option><option>Alta</option><option>Média</option><option>Baixa</option>
-      </select>
-    </div>
+    <div class="fg"><label>Filtrar Obra</label><div id="fa-obra-ms"></div></div>
+    <div class="fg"><label>Comprador</label><div id="fa-comp-ms"></div></div>
+    <div class="fg"><label>Status</label><div id="fa-status-ms"></div></div>
+    <div class="fg"><label>Tipo</label><div id="fa-tipo-ms"></div></div>
+    <div class="fg"><label>Prioridade</label><div id="fa-prio-ms"></div></div>
     <div class="fg"><label>Período — De</label><input type="date" id="fa-de" onchange="renderAnalise()"></div>
     <div class="fg"><label>Período — Até</label><input type="date" id="fa-ate" onchange="renderAnalise()"></div>
     <div class="fg" style="display:flex;align-items:flex-end;gap:8px;flex-shrink:0">
@@ -411,13 +400,8 @@ input[type=date]{color-scheme:dark}
 
   <!-- Filtros -->
   <div class="fbar">
-    <div class="fg"><label>Obra</label><select id="ct-f-obra" onchange="renderContatos()"><option value="">Todas</option></select></div>
-    <div class="fg"><label>Status do Contato</label>
-      <select id="ct-f-status" onchange="renderContatos()">
-        <option value="">Todos</option>
-        <option>Resolvido</option><option>Pendente</option><option>Aguardando Retorno</option><option>Sem Resposta</option>
-      </select>
-    </div>
+    <div class="fg"><label>Obra</label><div id="ct-f-obra-ms"></div></div>
+    <div class="fg"><label>Status do Contato</label><div id="ct-f-status-ms"></div></div>
     <div class="fg"><label>Data — De</label><input type="date" id="ct-f-de" onchange="renderContatos()"></div>
     <div class="fg"><label>Data — Até</label><input type="date" id="ct-f-ate" onchange="renderContatos()"></div>
     <div style="display:flex;gap:8px;align-items:flex-end;flex-shrink:0">
@@ -868,17 +852,17 @@ function showTab(id) {
 
 // ── DASHBOARD ─────────────────────────────────────────────────
 function getDashFilt() {
-  const fo=document.getElementById('df-obra')?.value||'';
-  const fc=document.getElementById('df-comp')?.value||'';
-  const fs=document.getElementById('df-status')?.value||'';
-  const ft=document.getElementById('df-tipo')?.value||'';
+  const fo=msVal('df-obra-ms');
+  const fc=msVal('df-comp-ms');
+  const fs=msVal('df-status-ms');
+  const ft=msVal('df-tipo-ms');
   const fde=document.getElementById('df-de')?.value||'';
   const fat=document.getElementById('df-ate')?.value||'';
   return reqs.filter(r=>{
-    if(fo&&r.obra!==fo) return false;
-    if(fc&&r.comp!==fc) return false;
-    if(fs&&r.status!==fs) return false;
-    if(ft&&r.tipo!==ft) return false;
+    if(fo.length&&!fo.includes(r.obra)) return false;
+    if(fc.length&&!fc.includes(r.comp)) return false;
+    if(fs.length&&!fs.includes(r.status)) return false;
+    if(ft.length&&!ft.includes(r.tipo)) return false;
     if(fde&&r.dtab<fde) return false;
     if(fat&&r.dtab>fat) return false;
     return true;
@@ -896,7 +880,8 @@ function getDashCtFilt() {
   });
 }
 function limparDashF() {
-  ['df-obra','df-comp','df-status','df-tipo','df-de','df-ate','df-ct-de','df-ct-ate','df-ct-obra'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['df-de','df-ate','df-ct-de','df-ct-ate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['df-obra-ms','df-comp-ms','df-status-ms','df-tipo-ms','df-ct-obra-ms'].forEach(msClear);
   renderDash();
 }
 function renderDash() {
@@ -999,18 +984,18 @@ function renderDash() {
 // ── REQUISIÇÕES ───────────────────────────────────────────────
 function getFilt() {
   const b=(document.getElementById('f-busca')?.value||'').toLowerCase();
-  const fo=document.getElementById('f-obra')?.value||'';
-  const fc=document.getElementById('f-comp')?.value||'';
-  const fs=document.getElementById('f-status')?.value||'';
-  const ft=document.getElementById('f-tipo')?.value||'';
+  const fo=msVal('f-obra-ms');
+  const fc=msVal('f-comp-ms');
+  const fs=msVal('f-status-ms');
+  const ft=msVal('f-tipo-ms');
   const fde=document.getElementById('f-de')?.value||'';
   const fat=document.getElementById('f-ate')?.value||'';
   return reqs.filter(r=>{
     if(b && !r.id.toLowerCase().includes(b) && !r.obra.toLowerCase().includes(b) && !r.mat.toLowerCase().includes(b)) return false;
-    if(fo && r.obra!==fo) return false;
-    if(fc && r.comp!==fc) return false;
-    if(fs && r.status!==fs) return false;
-    if(ft && r.tipo!==ft) return false;
+    if(fo.length && !fo.includes(r.obra)) return false;
+    if(fc.length && !fc.includes(r.comp)) return false;
+    if(fs.length && !fs.includes(r.status)) return false;
+    if(ft.length && !ft.includes(r.tipo)) return false;
     if(fde && r.dtab<fde) return false;
     if(fat && r.dtab>fat) return false;
     return true;
@@ -1136,7 +1121,7 @@ function duplicarReq(id) {
 }
 function limparF() {
   ['f-busca','f-de','f-ate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  ['f-obra','f-comp','f-status','f-tipo'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['f-obra-ms','f-comp-ms','f-status-ms','f-tipo-ms'].forEach(msClear);
   renderReq();
 }
 
@@ -1160,11 +1145,11 @@ function exportExcel() {
 
 // ── ANÁLISE POR OBRA ─────────────────────────────────────────
 function getAnaFilt() {
-  const fo  = document.getElementById('fa-obra')?.value   || '';
-  const fc  = document.getElementById('fa-comp')?.value   || '';
-  const fs  = document.getElementById('fa-status')?.value || '';
-  const ft  = document.getElementById('fa-tipo')?.value   || '';
-  const fp  = document.getElementById('fa-prio')?.value   || '';
+  const fo  = msVal('fa-obra-ms');
+  const fc  = msVal('fa-comp-ms');
+  const fs  = msVal('fa-status-ms');
+  const ft  = msVal('fa-tipo-ms');
+  const fp  = msVal('fa-prio-ms');
   const fde = document.getElementById('fa-de')?.value     || '';
   const fat = document.getElementById('fa-ate')?.value    || '';
   const aberto = document.getElementById('fa-aberto')?.checked || false;
@@ -1172,20 +1157,20 @@ function getAnaFilt() {
   return reqs.filter(r => {
     const eAberto = statusAberto.includes(r.status);
     if (aberto && eAberto) {
-      if (fo && r.obra   !== fo) return false;
-      if (fc && r.comp   !== fc) return false;
-      if (fs && r.status !== fs) return false;
-      if (ft && r.tipo   !== ft) return false;
-      if (fp && r.prio   !== fp) return false;
+      if (fo.length && !fo.includes(r.obra))   return false;
+      if (fc.length && !fc.includes(r.comp))   return false;
+      if (fs.length && !fs.includes(r.status)) return false;
+      if (ft.length && !ft.includes(r.tipo))   return false;
+      if (fp.length && !fp.includes(r.prio))   return false;
       return true;
     }
-    if (fo  && r.obra   !== fo)  return false;
-    if (fc  && r.comp   !== fc)  return false;
-    if (fs  && r.status !== fs)  return false;
-    if (ft  && r.tipo   !== ft)  return false;
-    if (fp  && r.prio   !== fp)  return false;
-    if (fde && r.dtab   <   fde) return false;
-    if (fat && r.dtab   >   fat) return false;
+    if (fo.length  && !fo.includes(r.obra))   return false;
+    if (fc.length  && !fc.includes(r.comp))   return false;
+    if (fs.length  && !fs.includes(r.status)) return false;
+    if (ft.length  && !ft.includes(r.tipo))   return false;
+    if (fp.length  && !fp.includes(r.prio))   return false;
+    if (fde && r.dtab < fde) return false;
+    if (fat && r.dtab > fat) return false;
     return true;
   });
 }
@@ -1759,13 +1744,13 @@ function finalizarContatoModal() {
 }
 
 function getCtFilt() {
-  const fo = document.getElementById('ct-f-obra')?.value||'';
-  const fs = document.getElementById('ct-f-status')?.value||'';
+  const fo = msVal('ct-f-obra-ms');
+  const fs = msVal('ct-f-status-ms');
   const fde= document.getElementById('ct-f-de')?.value||'';
   const fat= document.getElementById('ct-f-ate')?.value||'';
   return contatos.filter(c=>{
-    if (fo && c.obra!==fo) return false;
-    if (fs && c.status!==fs) return false;
+    if (fo.length && !fo.includes(c.obra))   return false;
+    if (fs.length && !fs.includes(c.status)) return false;
     if (fde && c.dt.slice(0,10)<fde) return false;
     if (fat && c.dt.slice(0,10)>fat) return false;
     return true;
@@ -1856,7 +1841,8 @@ function renderContatos() {
 }
 
 function limparCtF() {
-  ['ct-f-obra','ct-f-status','ct-f-de','ct-f-ate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['ct-f-de','ct-f-ate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['ct-f-obra-ms','ct-f-status-ms'].forEach(msClear);
   renderContatos();
 }
 
@@ -2168,8 +2154,118 @@ function exportExcelAv(){
   XLSX.writeFile(wb,'Avaliacao_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 
+
+// ── MULTI-SELECT HELPER ──────────────────────────────────────
+function createMultiSelect(id, options, placeholder, onChange) {
+  const wrap = document.getElementById(id);
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  wrap.className = 'ms-wrap fg';
+  
+  const btn = document.createElement('button');
+  btn.className = 'ms-btn';
+  btn.type = 'button';
+  btn.innerHTML = `<span class="ms-label">${placeholder}</span><span class="ms-arrow">▼</span>`;
+  
+  const dropdown = document.createElement('div');
+  dropdown.className = 'ms-dropdown';
+  
+  options.forEach(opt => {
+    const row = document.createElement('div');
+    row.className = 'ms-opt';
+    const uid = id + '_' + opt.value.replace(/[^a-z0-9]/gi,'_');
+    row.innerHTML = `<input type="checkbox" id="${uid}" value="${opt.value}"><label for="${uid}">${opt.label}</label>`;
+    row.querySelector('input').addEventListener('change', () => { updateLabel(); onChange(); });
+    dropdown.appendChild(row);
+  });
+  
+  const clear = document.createElement('div');
+  clear.className = 'ms-clear';
+  clear.textContent = '✕ Limpar seleção';
+  clear.addEventListener('click', () => { 
+    dropdown.querySelectorAll('input').forEach(i => i.checked = false);
+    updateLabel(); onChange();
+  });
+  dropdown.appendChild(clear);
+  
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = dropdown.classList.contains('open');
+    document.querySelectorAll('.ms-dropdown.open').forEach(d => { d.classList.remove('open'); d.previousElementSibling?.classList.remove('open'); });
+    if (!isOpen) { dropdown.classList.add('open'); btn.classList.add('open'); }
+  });
+  
+  document.addEventListener('click', () => { dropdown.classList.remove('open'); btn.classList.remove('open'); });
+  
+  function updateLabel() {
+    const checked = [...dropdown.querySelectorAll('input:checked')].map(i => i.value);
+    const label = btn.querySelector('.ms-label');
+    label.textContent = checked.length === 0 ? placeholder : checked.length === 1 ? checked[0] : `${checked.length} selecionados`;
+    btn.style.borderColor = checked.length > 0 ? 'var(--acc)' : '';
+  }
+  
+  wrap.appendChild(btn);
+  wrap.appendChild(dropdown);
+  wrap._getValues = () => [...dropdown.querySelectorAll('input:checked')].map(i => i.value);
+  wrap._clear = () => { dropdown.querySelectorAll('input').forEach(i => i.checked = false); updateLabel(); };
+}
+
+function msVal(id) {
+  const el = document.getElementById(id);
+  return el?._getValues ? el._getValues() : (el?.value ? [el.value] : []);
+}
+function msClear(id) {
+  const el = document.getElementById(id);
+  if (el?._clear) el._clear();
+  else if (el) el.value = '';
+}
+
+function initMultiSelects() {
+  const statusOpts = [
+    {value:'Pendente',label:'Pendente'},
+    {value:'Finalizada',label:'Finalizada'},
+    {value:'Aguardando PGT Cliente',label:'Ag. PGT Cliente'},
+    {value:'Aguardando Iniciar Obra',label:'Ag. Iniciar Obra'},
+    {value:'Reprovado',label:'Reprovado'},
+    {value:'Valor S/BDI Abaixo',label:'S/BDI Abaixo'}
+  ];
+  const tipoOpts = [{value:'Planejado',label:'Planejado'},{value:'Urgente',label:'Urgente'}];
+  const prioOpts = [{value:'Alta',label:'Alta'},{value:'Média',label:'Média'},{value:'Baixa',label:'Baixa'}];
+  const obraOpts = () => OBRAS.map(o => ({value:o,label:o}));
+  const compOpts = () => COMPS.map(c => ({value:c,label:c}));
+
+  // Dashboard
+  createMultiSelect('df-obra-ms',  obraOpts(),  'Todas as obras', renderDash);
+  createMultiSelect('df-comp-ms',  compOpts(),  'Todos',          renderDash);
+  createMultiSelect('df-status-ms',statusOpts,  'Todos status',   renderDash);
+  createMultiSelect('df-tipo-ms',  tipoOpts,    'Todos tipos',    renderDash);
+
+  // Requisições
+  createMultiSelect('f-obra-ms',   obraOpts(),  'Todas as obras', renderReq);
+  createMultiSelect('f-comp-ms',   compOpts(),  'Todos',          renderReq);
+  createMultiSelect('f-status-ms', statusOpts,  'Todos status',   renderReq);
+  createMultiSelect('f-tipo-ms',   tipoOpts,    'Todos tipos',    renderReq);
+
+  // Análise
+  createMultiSelect('fa-obra-ms',  obraOpts(),  'Todas as obras', renderAnalise);
+  createMultiSelect('fa-comp-ms',  compOpts(),  'Todos',          renderAnalise);
+  createMultiSelect('fa-status-ms',statusOpts,  'Todos status',   renderAnalise);
+  createMultiSelect('fa-tipo-ms',  tipoOpts,    'Todos tipos',    renderAnalise);
+  createMultiSelect('fa-prio-ms',  prioOpts,    'Todas prio.',    renderAnalise);
+
+  // Contatos
+  createMultiSelect('ct-f-obra-ms', obraOpts(), 'Todas as obras', renderContatos);
+  createMultiSelect('ct-f-status-ms',[
+    {value:'Resolvido',label:'Resolvido'},
+    {value:'Pendente',label:'Pendente'},
+    {value:'Aguardando Retorno',label:'Aguardando Retorno'},
+    {value:'Sem Resposta',label:'Sem Resposta'}
+  ], 'Todos status', renderContatos);
+}
+
 // ── INIT ──────────────────────────────────────────────────────
 populaSelects();
+setTimeout(initMultiSelects, 100);
 initFirebase();
 </script>
 </body>
