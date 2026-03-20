@@ -629,7 +629,7 @@ input[type=date]{color-scheme:dark}
 
 <!-- MODAL COLABORADOR -->
 <div class="modal-ov" id="modal-colaborador">
-  <div class="modal" style="max-width:500px">
+  <div class="modal" style="max-width:600px;max-height:90vh;overflow-y:auto">
     <div class="modal-title"><span id="mc-title">Novo Colaborador</span><button class="xbtn" onclick="closeModal('modal-colaborador')">✕</button></div>
     <input type="hidden" id="mc-edit-id">
     <div class="fgrid">
@@ -677,7 +677,7 @@ input[type=date]{color-scheme:dark}
     </div>
 
     <div class="fg" style="margin-top:8px"><label>Comentários / Observações</label><textarea id="mc-obs" rows="3" placeholder="Registre observações importantes..."></textarea></div>
-    <div style="display:flex;gap:10px;margin-top:16px;align-items:center">
+    <div style="position:sticky;bottom:0;background:var(--sur);padding:14px 0 2px;display:flex;gap:10px;align-items:center;border-top:1px solid var(--bor);margin-top:16px">
       <button class="btn btn-primary" onclick="salvarColaborador()">💾 Salvar</button>
       <button class="btn btn-ghost" onclick="closeModal('modal-colaborador')">Cancelar</button>
       <span id="mc-msg" style="font-size:12px"></span>
