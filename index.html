@@ -450,12 +450,22 @@ input[type=date]{color-scheme:dark}
   <div class="twrap"><div class="tscroll">
     <table><thead><tr>
       <th>Nome</th><th>Cargo</th>
-      <th style="text-align:center">Pontualidade</th>
-      <th style="text-align:center">Postura</th>
-      <th style="text-align:center">Comunicação</th>
-      <th style="text-align:center">Produtividade</th>
+      <th style="text-align:center">Pontual.</th>
+      <th style="text-align:center">Respeito</th>
+      <th style="text-align:center">Conduta</th>
+      <th style="text-align:center">Normas</th>
+      <th style="text-align:center">Produt.</th>
+      <th style="text-align:center">Organiz.</th>
+      <th style="text-align:center">Negoc.</th>
+      <th style="text-align:center">Fornec.</th>
+      <th style="text-align:center">Obras</th>
+      <th style="text-align:center">Proativ.</th>
+      <th style="text-align:center">Resoluc.</th>
+      <th style="text-align:center">Com.Gestão</th>
+      <th style="text-align:center">Pressão</th>
+      <th style="text-align:center" style="color:var(--dan)">Canal ⚠</th>
       <th style="text-align:center">Média</th>
-      <th>Comentários</th><th>Ações</th>
+      <th>Obs.</th><th>Ações</th>
     </tr></thead><tbody id="tb-av"></tbody></table>
   </div></div>
   <div class="twrap" style="margin-top:20px">
@@ -626,14 +636,47 @@ input[type=date]{color-scheme:dark}
       <div class="fg"><label>Nome *</label><input type="text" id="mc-nome" placeholder="Nome completo"></div>
       <div class="fg"><label>Cargo</label><input type="text" id="mc-cargo" placeholder="Ex: Pedreiro..."></div>
     </div>
-    <div style="margin:16px 0 8px;font-size:11px;font-weight:700;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px">Avaliação (1 a 5 ⭐)</div>
-    <div class="fgrid">
-      <div class="fg"><label>Pontualidade</label><div id="stars-pont" class="star-group"></div><input type="hidden" id="mc-pont" value="0"></div>
-      <div class="fg"><label>Postura</label><div id="stars-post" class="star-group"></div><input type="hidden" id="mc-post" value="0"></div>
-      <div class="fg"><label>Comunicação</label><div id="stars-com" class="star-group"></div><input type="hidden" id="mc-com" value="0"></div>
-      <div class="fg"><label>Produtividade</label><div id="stars-prod" class="star-group"></div><input type="hidden" id="mc-prod" value="0"></div>
+    <div style="margin:16px 0 6px;font-size:11px;font-weight:700;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px">Avaliação (1 a 5 ⭐)</div>
+
+    <div style="background:var(--sur2);border-radius:8px;padding:10px 14px;margin-bottom:10px">
+      <div style="font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">🏢 Comportamento Interno</div>
+      <div class="fgrid">
+        <div class="fg"><label>Pontualidade e Assiduidade</label><div id="stars-pont" class="star-group"></div><input type="hidden" id="mc-pont" value="0"></div>
+        <div class="fg"><label>Respeito com Colegas</label><div id="stars-resp" class="star-group"></div><input type="hidden" id="mc-resp" value="0"></div>
+        <div class="fg"><label>Conduta em Reuniões e Sala</label><div id="stars-cond" class="star-group"></div><input type="hidden" id="mc-cond" value="0"></div>
+        <div class="fg"><label>Cumprimento das Normas</label><div id="stars-norm" class="star-group"></div><input type="hidden" id="mc-norm" value="0"></div>
+      </div>
     </div>
-    <div class="fg" style="margin-top:12px"><label>Comentários</label><textarea id="mc-obs" rows="3" placeholder="Observações..."></textarea></div>
+
+    <div style="background:var(--sur2);border-radius:8px;padding:10px 14px;margin-bottom:10px">
+      <div style="font-size:10px;font-weight:700;color:var(--acc2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">📋 Desempenho Técnico</div>
+      <div class="fgrid">
+        <div class="fg"><label>Produtividade e Entregas</label><div id="stars-prod" class="star-group"></div><input type="hidden" id="mc-prod" value="0"></div>
+        <div class="fg"><label>Organização das Requisições</label><div id="stars-org" class="star-group"></div><input type="hidden" id="mc-org" value="0"></div>
+        <div class="fg"><label>Qualidade nas Negociações</label><div id="stars-neg" class="star-group"></div><input type="hidden" id="mc-neg" value="0"></div>
+        <div class="fg"><label>Comunicação com Fornecedores</label><div id="stars-forn" class="star-group"></div><input type="hidden" id="mc-forn" value="0"></div>
+      </div>
+    </div>
+
+    <div style="background:var(--sur2);border-radius:8px;padding:10px 14px;margin-bottom:10px">
+      <div style="font-size:10px;font-weight:700;color:var(--acc3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">🏗 Relacionamento Externo</div>
+      <div class="fgrid">
+        <div class="fg"><label>Relacionamento com Obras</label><div id="stars-obra" class="star-group"></div><input type="hidden" id="mc-obra" value="0"></div>
+        <div class="fg"><label>Proatividade e Iniciativa</label><div id="stars-proat" class="star-group"></div><input type="hidden" id="mc-proat" value="0"></div>
+        <div class="fg"><label>Resolução de Problemas</label><div id="stars-resol" class="star-group"></div><input type="hidden" id="mc-resol" value="0"></div>
+      </div>
+    </div>
+
+    <div style="background:var(--sur2);border-radius:8px;padding:10px 14px;margin-bottom:10px">
+      <div style="font-size:10px;font-weight:700;color:var(--acc4);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">💬 Comunicação e Hierarquia</div>
+      <div class="fgrid">
+        <div class="fg"><label>Comunicação com a Gestão</label><div id="stars-com" class="star-group"></div><input type="hidden" id="mc-com" value="0"></div>
+        <div class="fg"><label>Trabalho sob Pressão</label><div id="stars-press" class="star-group"></div><input type="hidden" id="mc-press" value="0"></div>
+        <div class="fg"><label style="color:var(--dan)">Canal de Comunicação Correto ⚠</label><div id="stars-canal" class="star-group"></div><input type="hidden" id="mc-canal" value="0"></div>
+      </div>
+    </div>
+
+    <div class="fg" style="margin-top:8px"><label>Comentários / Observações</label><textarea id="mc-obs" rows="3" placeholder="Registre observações importantes..."></textarea></div>
     <div style="display:flex;gap:10px;margin-top:16px;align-items:center">
       <button class="btn btn-primary" onclick="salvarColaborador()">💾 Salvar</button>
       <button class="btn btn-ghost" onclick="closeModal('modal-colaborador')">Cancelar</button>
@@ -2110,18 +2153,18 @@ function openModalColaborador(id) {
   document.getElementById('mc-nome').value = c ? c.nome : '';
   document.getElementById('mc-cargo').value = c ? (c.cargo||'') : '';
   document.getElementById('mc-obs').value = c ? (c.obs||'') : '';
-  ['pont','post','com','prod'].forEach(f=>{ document.getElementById('mc-'+f).value = c?(c[f]||0):0; renderStars(f,c?(c[f]||0):0); });
+  ['pont','resp','cond','norm','prod','org','neg','forn','obra','proat','resol','com','press','canal'].forEach(f=>{ const el=document.getElementById('mc-'+f); if(el){el.value=c?(c[f]||0):0; renderStars(f,c?(c[f]||0):0);} });
   document.getElementById('mc-msg').textContent='';
   document.getElementById('modal-colaborador').classList.add('open');
 }
 function renderStars(field, val) {
-  const map={pont:'stars-pont',post:'stars-post',com:'stars-com',prod:'stars-prod'};
+  const map={pont:'stars-pont',resp:'stars-resp',cond:'stars-cond',norm:'stars-norm',prod:'stars-prod',org:'stars-org',neg:'stars-neg',forn:'stars-forn',obra:'stars-obra',proat:'stars-proat',resol:'stars-resol',com:'stars-com',press:'stars-press',canal:'stars-canal'};
   const el=document.getElementById(map[field]); if(!el) return;
   el.innerHTML=[1,2,3,4,5].map(i=>`<span class="star ${i<=val?'on':''}" onclick="setStar('${field}',${i})" onmouseover="hoverStar('${field}',${i})" onmouseout="renderStars('${field}',parseInt(document.getElementById('mc-${field}').value)||0)">★</span>`).join('');
 }
 function setStar(field,val){ document.getElementById('mc-'+field).value=val; renderStars(field,val); }
 function hoverStar(field,val){
-  const map={pont:'stars-pont',post:'stars-post',com:'stars-com',prod:'stars-prod'};
+  const map={pont:'stars-pont',resp:'stars-resp',cond:'stars-cond',norm:'stars-norm',prod:'stars-prod',org:'stars-org',neg:'stars-neg',forn:'stars-forn',obra:'stars-obra',proat:'stars-proat',resol:'stars-resol',com:'stars-com',press:'stars-press',canal:'stars-canal'};
   document.getElementById(map[field]).querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('on',i<val));
 }
 function salvarColaborador() {
@@ -2129,18 +2172,30 @@ function salvarColaborador() {
   const msg=document.getElementById('mc-msg');
   if(!nome){msg.style.color='var(--dan)';msg.textContent='⚠ Informe o nome.';return;}
   const pont=parseInt(document.getElementById('mc-pont').value)||0;
-  const post=parseInt(document.getElementById('mc-post').value)||0;
-  const com=parseInt(document.getElementById('mc-com').value)||0;
+  const resp=parseInt(document.getElementById('mc-resp').value)||0;
+  const cond=parseInt(document.getElementById('mc-cond').value)||0;
+  const norm=parseInt(document.getElementById('mc-norm').value)||0;
   const prod=parseInt(document.getElementById('mc-prod').value)||0;
-  const media=parseFloat(((pont+post+com+prod)/4).toFixed(1));
+  const org=parseInt(document.getElementById('mc-org').value)||0;
+  const neg=parseInt(document.getElementById('mc-neg').value)||0;
+  const forn=parseInt(document.getElementById('mc-forn').value)||0;
+  const obra=parseInt(document.getElementById('mc-obra').value)||0;
+  const proat=parseInt(document.getElementById('mc-proat').value)||0;
+  const resol=parseInt(document.getElementById('mc-resol').value)||0;
+  const com=parseInt(document.getElementById('mc-com').value)||0;
+  const press=parseInt(document.getElementById('mc-press').value)||0;
+  const canal=parseInt(document.getElementById('mc-canal').value)||0;
+  const campos=[pont,resp,cond,norm,prod,org,neg,forn,obra,proat,resol,com,press,canal];
+  const preenchidos=campos.filter(x=>x>0);
+  const media=preenchidos.length?parseFloat((preenchidos.reduce((a,b)=>a+b,0)/preenchidos.length).toFixed(1)):0;
   const editId=document.getElementById('mc-edit-id').value;
   const cargo=document.getElementById('mc-cargo').value.trim();
   const obs=document.getElementById('mc-obs').value.trim();
   if(editId){
     const idx=colaboradores.findIndex(x=>x.id===editId);
-    colaboradores[idx]={...colaboradores[idx],nome,cargo,pont,post,com,prod,media,obs};
+    colaboradores[idx]={...colaboradores[idx],nome,cargo,pont,resp,cond,norm,prod,org,neg,forn,obra,proat,resol,com,press,canal,media,obs};
   } else {
-    colaboradores.push({id:'AV-'+Date.now(),nome,cargo,pont,post,com,prod,media,obs,criadoEm:new Date().toISOString()});
+    colaboradores.push({id:'AV-'+Date.now(),nome,cargo,pont,resp,cond,norm,prod,org,neg,forn,obra,proat,resol,com,press,canal,media,obs,criadoEm:new Date().toISOString()});
   }
   saveColaboradores(); closeModal('modal-colaborador'); renderAvaliacao();
 }
@@ -2154,17 +2209,27 @@ function mediaColor(m){ return m>=4?'var(--acc3)':m>=3?'var(--warn)':'var(--dan)
 function renderAvaliacao() {
   document.getElementById('av-pill').textContent=colaboradores.length;
   const tb=document.getElementById('tb-av');
-  if(!colaboradores.length){tb.innerHTML='<tr><td colspan="9" class="empty"><div class="eico">👥</div>Nenhum colaborador cadastrado</td></tr>';} 
+  if(!colaboradores.length){tb.innerHTML='<tr><td colspan="19" class="empty"><div class="eico">👥</div>Nenhum colaborador cadastrado</td></tr>';} 
   else {
     tb.innerHTML=colaboradores.map(c=>`<tr>
       <td style="font-weight:600">${c.nome}</td>
       <td style="font-size:11px;color:var(--mut2)">${c.cargo||'—'}</td>
       <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.pont?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
-      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.post?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
-      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.com?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.resp?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.cond?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.norm?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
       <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.prod?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.org?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.neg?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.forn?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.obra?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.proat?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.resol?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.com?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=c.press?'#f5a623':'var(--bor2)')+'">★</span>').join('')}</td>
+      <td style="text-align:center">${[1,2,3,4,5].map(i=>'<span style="color:'+(i<=(c.canal||0)?'#f04f4f':'var(--bor2)')+'">★</span>').join('')}</td>
       <td style="text-align:center;font-family:var(--fh);font-size:18px;font-weight:800;color:${mediaColor(c.media)}">${c.media||'—'}</td>
-      <td style="font-size:11px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${c.obs||''}">${c.obs||'—'}</td>
+      <td style="font-size:11px;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${c.obs||''}">${c.obs||'—'}</td>
       <td style="display:flex;gap:4px">
         <button class="btn btn-ghost btn-xs" onclick="openModalColaborador('${c.id}')">✏</button>
         <button class="btn btn-xs" style="background:#f04f4f18;color:var(--dan);border:1px solid #f04f4f30" onclick="excluirColaborador('${c.id}')">🗑</button>
@@ -2183,7 +2248,7 @@ function renderAvaliacao() {
 }
 function exportExcelAv(){
   if(!colaboradores.length){alert('Nenhum colaborador.');return;}
-  const rows=colaboradores.map(c=>({'Nome':c.nome,'Cargo':c.cargo||'','Pontualidade':c.pont||0,'Postura':c.post||0,'Comunicação':c.com||0,'Produtividade':c.prod||0,'Média':c.media||0,'Comentários':c.obs||''}));
+  const rows=colaboradores.map(c=>({'Nome':c.nome,'Cargo':c.cargo||'','Pontualidade':c.pont||0,'Respeito c/ Colegas':c.resp||0,'Conduta em Sala':c.cond||0,'Normas da Empresa':c.norm||0,'Produtividade':c.prod||0,'Organização':c.org||0,'Negociação':c.neg||0,'Com. Fornecedores':c.forn||0,'Rel. com Obras':c.obra||0,'Proatividade':c.proat||0,'Resolução de Problemas':c.resol||0,'Com. com Gestão':c.com||0,'Trabalho sob Pressão':c.press||0,'Canal de Comunicação':c.canal||0,'Média':c.media||0,'Comentários':c.obs||''}));
   const ws=XLSX.utils.json_to_sheet(rows);
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Avaliação');
