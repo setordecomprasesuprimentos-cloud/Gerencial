@@ -443,10 +443,21 @@ input[type=date]{color-scheme:dark}
 <!-- AVALIAÇÃO DE DESEMPENHO -->
 <div class="tab-content" id="tab-avaliacao">
   <div class="stitle">⭐ Avaliação de Desempenho <span class="pill green" id="av-pill">0</span></div>
-  <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap">
-    <button class="btn btn-primary btn-sm" onclick="openModalColaborador()">+ Novo Colaborador</button>
-    <button class="btn btn-green btn-sm" onclick="exportExcelAv()">📊 Exportar Excel</button>
+
+  <!-- SUBTABS -->
+  <div style="display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--bor);flex-wrap:wrap">
+    <button id="avtab-colab" class="btn btn-primary btn-sm" style="border-radius:8px 8px 0 0" onclick="showAvTab('colab')">👥 Colaboradores</button>
+    <button id="avtab-ocorr" class="btn btn-ghost btn-sm" style="border-radius:8px 8px 0 0" onclick="showAvTab('ocorr')">📌 Ocorrências</button>
+    <button id="avtab-check" class="btn btn-ghost btn-sm" style="border-radius:8px 8px 0 0" onclick="showAvTab('check')">✅ Checklist</button>
+    <button id="avtab-dash" class="btn btn-ghost btn-sm" style="border-radius:8px 8px 0 0" onclick="showAvTab('dash')">📊 Painel Geral</button>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;padding-bottom:4px">
+      <button class="btn btn-primary btn-sm" onclick="openModalColaborador()">+ Colaborador</button>
+      <button class="btn btn-green btn-sm" onclick="exportExcelAv()">📊 Excel</button>
+    </div>
   </div>
+
+  <!-- SUB: COLABORADORES -->
+  <div id="av-colab">
   <div class="twrap"><div class="tscroll">
     <table><thead><tr>
       <th>Nome</th><th>Cargo</th>
@@ -472,8 +483,108 @@ input[type=date]{color-scheme:dark}
     <div class="twrap-hd"><h3>📊 Ranking de Desempenho</h3></div>
     <div id="av-ranking" style="padding:16px"></div>
   </div>
+  </div><!-- /av-colab -->
+
+  <!-- SUB: OCORRÊNCIAS -->
+  <div id="av-ocorr" style="display:none">
+    <div class="fbar">
+      <div class="fg"><label>Colaborador</label><select id="oc-f-comp" onchange="renderOcorrencias()"><option value="">Todos</option></select></div>
+      <div class="fg"><label>Tipo</label><select id="oc-f-tipo" onchange="renderOcorrencias()"><option value="">Todos</option><option value="positivo">✅ Positivo</option><option value="negativo">⚠ Negativo</option></select></div>
+      <div class="fg"><label>Critério</label><select id="oc-f-crit" onchange="renderOcorrencias()"><option value="">Todos</option></select></div>
+      <div class="fg"><label>De</label><input type="date" id="oc-f-de" onchange="renderOcorrencias()"></div>
+      <div class="fg"><label>Até</label><input type="date" id="oc-f-ate" onchange="renderOcorrencias()"></div>
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <button class="btn btn-ghost btn-sm" onclick="limparOcFiltros()">✕</button>
+        <button class="btn btn-primary btn-sm" onclick="openModalOcorrencia()">+ Registrar</button>
+      </div>
+    </div>
+    <div class="twrap"><div class="tscroll">
+      <table><thead><tr>
+        <th>Data</th><th>Colaborador</th><th>Critério</th><th>Tipo</th><th>Pontos</th><th>Descrição</th><th>Ação</th>
+      </tr></thead><tbody id="tb-ocorr"></tbody></table>
+    </div></div>
+  </div>
+
+  <!-- SUB: CHECKLIST -->
+  <div id="av-check" style="display:none">
+    <div class="fbar">
+      <div class="fg"><label>Colaborador</label><select id="ck-f-comp" onchange="renderChecklist()"><option value="">Todos</option></select></div>
+      <div class="fg"><label>Período</label><select id="ck-f-per" onchange="renderChecklist()"><option value="semanal">Semanal</option><option value="mensal">Mensal</option></select></div>
+      <div class="fg"><label>De</label><input type="date" id="ck-f-de" onchange="renderChecklist()"></div>
+      <div class="fg"><label>Até</label><input type="date" id="ck-f-ate" onchange="renderChecklist()"></div>
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <button class="btn btn-ghost btn-sm" onclick="limparCkFiltros()">✕</button>
+        <button class="btn btn-primary btn-sm" onclick="openModalChecklist()">+ Novo Checklist</button>
+      </div>
+    </div>
+    <div class="twrap"><div class="tscroll">
+      <table><thead><tr>
+        <th>Data</th><th>Colaborador</th><th>Período</th><th>Cumpridos</th><th>Total</th><th>%</th><th>Obs.</th><th>Ação</th>
+      </tr></thead><tbody id="tb-check"></tbody></table>
+    </div></div>
+  </div>
+
+  <!-- SUB: PAINEL GERAL -->
+  <div id="av-dash" style="display:none">
+    <div class="fbar">
+      <div class="fg"><label>Colaborador</label><select id="avd-f-comp" onchange="renderAvDash()"><option value="">Todos</option></select></div>
+      <div class="fg"><label>De</label><input type="date" id="avd-f-de" onchange="renderAvDash()"></div>
+      <div class="fg"><label>Até</label><input type="date" id="avd-f-ate" onchange="renderAvDash()"></div>
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <button class="btn btn-ghost btn-sm" onclick="limparAvDFiltros()">✕</button>
+      </div>
+    </div>
+    <div id="av-dash-content" style="padding:8px 0"></div>
+  </div>
+
 </div>
 </main>
+
+<!-- MODAL OCORRÊNCIA -->
+<div class="modal-ov" id="modal-ocorrencia">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title">📌 Registrar Ocorrência <button class="xbtn" onclick="closeModal('modal-ocorrencia')">✕</button></div>
+    <div class="fgrid">
+      <div class="fg"><label>Colaborador *</label><select id="oc-comp"><option value="">Selecione...</option></select></div>
+      <div class="fg"><label>Data *</label><input type="date" id="oc-data"></div>
+      <div class="fg"><label>Critério *</label><select id="oc-crit"><option value="">Selecione...</option></select></div>
+      <div class="fg"><label>Tipo *</label>
+        <select id="oc-tipo">
+          <option value="">Selecione...</option>
+          <option value="positivo">✅ Positivo (+pontos)</option>
+          <option value="negativo">⚠ Negativo (-pontos)</option>
+        </select>
+      </div>
+      <div class="fg"><label>Pontos (1-10)</label><input type="number" id="oc-pontos" min="1" max="10" value="5"></div>
+    </div>
+    <div class="fg" style="margin-top:10px"><label>Descrição *</label><textarea id="oc-desc" rows="3" placeholder="Descreva o que aconteceu..."></textarea></div>
+    <div style="display:flex;gap:10px;margin-top:14px;align-items:center">
+      <button class="btn btn-primary" onclick="salvarOcorrencia()">💾 Salvar</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-ocorrencia')">Cancelar</button>
+      <span id="oc-msg" style="font-size:12px"></span>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CHECKLIST -->
+<div class="modal-ov" id="modal-checklist">
+  <div class="modal" style="max-width:580px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">✅ Novo Checklist <button class="xbtn" onclick="closeModal('modal-checklist')">✕</button></div>
+    <div class="fgrid">
+      <div class="fg"><label>Colaborador *</label><select id="ck-comp"><option value="">Selecione...</option></select></div>
+      <div class="fg"><label>Data *</label><input type="date" id="ck-data"></div>
+      <div class="fg"><label>Período</label><select id="ck-periodo"><option value="semanal">Semanal</option><option value="mensal">Mensal</option></select></div>
+    </div>
+    <div style="margin:14px 0 8px;font-size:11px;font-weight:700;color:var(--mut2);text-transform:uppercase">Marque os critérios cumpridos:</div>
+    <div id="ck-criterios-list" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px"></div>
+    <div class="fg"><label>Observações</label><textarea id="ck-obs" rows="2" placeholder="Observações gerais..."></textarea></div>
+    <div style="position:sticky;bottom:0;background:var(--sur);padding:12px 0 2px;display:flex;gap:10px;align-items:center;border-top:1px solid var(--bor);margin-top:12px">
+      <button class="btn btn-primary" onclick="salvarChecklist()">💾 Salvar</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-checklist')">Cancelar</button>
+      <span id="ck-msg" style="font-size:12px"></span>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL NOVO COMPRADOR -->
 <div class="modal-ov" id="modal-comp">
@@ -811,6 +922,13 @@ async function initFirebase() {
     _dbReady = true;
     setSyncStatus('ok');
     await loadColaboradores(); renderAvaliacao();
+    // Carregar ocorrências e checklists do Firebase
+    try {
+      const snapOc = await db.collection('dados').doc('av_ocorrencias').get();
+      if(snapOc.exists && snapOc.data().list) { ocorrencias = snapOc.data().list; localStorage.setItem('av_ocorr_v1', JSON.stringify(ocorrencias)); }
+      const snapCk = await db.collection('dados').doc('av_checklists').get();
+      if(snapCk.exists && snapCk.data().list) { checklists = snapCk.data().list; localStorage.setItem('av_check_v1', JSON.stringify(checklists)); }
+    } catch(e) {}
 
     // Se Firebase estiver vazio, faz seed inicial e sobe
     if (!reqs.length) {
@@ -2253,6 +2371,290 @@ function exportExcelAv(){
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Avaliação');
   XLSX.writeFile(wb,'Avaliacao_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+// ── CRITÉRIOS DE AVALIAÇÃO ────────────────────────────────────
+const AV_CRITERIOS = [
+  {id:'pont', label:'Pontualidade e Assiduidade', grupo:'Comportamento Interno'},
+  {id:'resp', label:'Respeito com Colegas', grupo:'Comportamento Interno'},
+  {id:'cond', label:'Conduta em Reuniões e Sala', grupo:'Comportamento Interno'},
+  {id:'norm', label:'Cumprimento das Normas', grupo:'Comportamento Interno'},
+  {id:'prod', label:'Produtividade e Entregas', grupo:'Desempenho Técnico'},
+  {id:'org',  label:'Organização das Requisições', grupo:'Desempenho Técnico'},
+  {id:'neg',  label:'Qualidade nas Negociações', grupo:'Desempenho Técnico'},
+  {id:'forn', label:'Comunicação com Fornecedores', grupo:'Desempenho Técnico'},
+  {id:'obra', label:'Relacionamento com Obras', grupo:'Relacionamento Externo'},
+  {id:'proat',label:'Proatividade e Iniciativa', grupo:'Relacionamento Externo'},
+  {id:'resol',label:'Resolução de Problemas', grupo:'Relacionamento Externo'},
+  {id:'com',  label:'Comunicação com a Gestão', grupo:'Comunicação e Hierarquia'},
+  {id:'press',label:'Trabalho sob Pressão', grupo:'Comunicação e Hierarquia'},
+  {id:'canal',label:'Canal de Comunicação Correto', grupo:'Comunicação e Hierarquia'},
+];
+
+// ── SUBTABS AVALIAÇÃO ─────────────────────────────────────────
+function showAvTab(tab) {
+  ['colab','ocorr','check','dash'].forEach(t => {
+    document.getElementById('av-'+t).style.display = t===tab ? 'block' : 'none';
+    const btn = document.getElementById('avtab-'+t);
+    if(btn) { btn.className = t===tab ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'; btn.style.borderRadius='8px 8px 0 0'; }
+  });
+  if(tab==='ocorr') renderOcorrencias();
+  if(tab==='check') renderChecklist();
+  if(tab==='dash')  renderAvDash();
+}
+
+// ── OCORRÊNCIAS ───────────────────────────────────────────────
+let ocorrencias = JSON.parse(localStorage.getItem('av_ocorr_v1') || '[]');
+function saveOcorrencias() {
+  localStorage.setItem('av_ocorr_v1', JSON.stringify(ocorrencias));
+  db.collection('dados').doc('av_ocorrencias').set({list: ocorrencias}).catch(()=>{});
+}
+
+function openModalOcorrencia() {
+  const sel = document.getElementById('oc-comp');
+  sel.innerHTML = '<option value="">Selecione...</option>' + colaboradores.map(c=>`<option>${c.nome}</option>`).join('');
+  const critSel = document.getElementById('oc-crit');
+  critSel.innerHTML = '<option value="">Selecione...</option>' + AV_CRITERIOS.map(c=>`<option value="${c.id}">${c.label}</option>`).join('');
+  document.getElementById('oc-data').value = new Date().toISOString().slice(0,10);
+  document.getElementById('oc-tipo').value = '';
+  document.getElementById('oc-pontos').value = 5;
+  document.getElementById('oc-desc').value = '';
+  document.getElementById('oc-msg').textContent = '';
+  document.getElementById('modal-ocorrencia').classList.add('open');
+}
+
+function salvarOcorrencia() {
+  const comp = document.getElementById('oc-comp').value;
+  const data = document.getElementById('oc-data').value;
+  const crit = document.getElementById('oc-crit').value;
+  const tipo = document.getElementById('oc-tipo').value;
+  const desc = document.getElementById('oc-desc').value.trim();
+  const msg  = document.getElementById('oc-msg');
+  if(!comp||!data||!crit||!tipo||!desc){msg.style.color='var(--dan)';msg.textContent='⚠ Preencha todos os campos.';return;}
+  const pontos = parseInt(document.getElementById('oc-pontos').value)||5;
+  const critLabel = AV_CRITERIOS.find(c=>c.id===crit)?.label||crit;
+  ocorrencias.push({id:'OC-'+Date.now(),comp,data,crit,critLabel,tipo,pontos,desc,criadoEm:new Date().toISOString()});
+  saveOcorrencias();
+  msg.style.color='var(--acc3)'; msg.textContent='✅ Registrado!';
+  setTimeout(()=>{closeModal('modal-ocorrencia');renderOcorrencias();renderAvDash();},1000);
+}
+
+function limparOcFiltros(){
+  ['oc-f-comp','oc-f-tipo','oc-f-crit','oc-f-de','oc-f-ate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  renderOcorrencias();
+}
+
+function renderOcorrencias() {
+  // Popular selects
+  const compSel = document.getElementById('oc-f-comp');
+  if(compSel){const v=compSel.value;compSel.innerHTML='<option value="">Todos</option>'+colaboradores.map(c=>`<option>${c.nome}</option>`).join('');compSel.value=v;}
+  const critSel = document.getElementById('oc-f-crit');
+  if(critSel){const v=critSel.value;critSel.innerHTML='<option value="">Todos</option>'+AV_CRITERIOS.map(c=>`<option value="${c.id}">${c.label}</option>`).join('');critSel.value=v;}
+
+  const fc = document.getElementById('oc-f-comp')?.value||'';
+  const ft = document.getElementById('oc-f-tipo')?.value||'';
+  const fk = document.getElementById('oc-f-crit')?.value||'';
+  const fde= document.getElementById('oc-f-de')?.value||'';
+  const fat= document.getElementById('oc-f-ate')?.value||'';
+
+  const d = ocorrencias.filter(o=>{
+    if(fc&&o.comp!==fc) return false;
+    if(ft&&o.tipo!==ft) return false;
+    if(fk&&o.crit!==fk) return false;
+    if(fde&&o.data<fde) return false;
+    if(fat&&o.data>fat) return false;
+    return true;
+  });
+
+  const tb = document.getElementById('tb-ocorr');
+  if(!d.length){tb.innerHTML='<tr><td colspan="7" class="empty"><div class="eico">📭</div>Nenhuma ocorrência</td></tr>';return;}
+  tb.innerHTML=[...d].reverse().map(o=>`<tr>
+    <td style="font-size:12px;white-space:nowrap">${o.data?o.data.split('-').reverse().join('/'):'—'}</td>
+    <td style="font-weight:600;font-size:12px">${o.comp}</td>
+    <td style="font-size:12px">${o.critLabel}</td>
+    <td><span class="badge ${o.tipo==='positivo'?'b-fin':'b-late'}">${o.tipo==='positivo'?'✅ Positivo':'⚠ Negativo'}</span></td>
+    <td style="font-family:var(--fh);font-weight:700;color:${o.tipo==='positivo'?'var(--acc3)':'var(--dan)'};text-align:center">${o.tipo==='positivo'?'+':'−'}${o.pontos}</td>
+    <td style="font-size:12px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${o.desc}</td>
+    <td><button class="btn btn-xs" style="background:#f04f4f18;color:var(--dan);border:1px solid #f04f4f30" onclick="excluirOcorrencia('${o.id}')">🗑</button></td>
+  </tr>`).join('');
+}
+
+function excluirOcorrencia(id){
+  if(!confirm('Excluir esta ocorrência?')) return;
+  ocorrencias=ocorrencias.filter(o=>o.id!==id);
+  saveOcorrencias(); renderOcorrencias(); renderAvDash();
+}
+
+// ── CHECKLIST ─────────────────────────────────────────────────
+let checklists = JSON.parse(localStorage.getItem('av_check_v1') || '[]');
+function saveChecklists() {
+  localStorage.setItem('av_check_v1', JSON.stringify(checklists));
+  db.collection('dados').doc('av_checklists').set({list: checklists}).catch(()=>{});
+}
+
+function openModalChecklist() {
+  const sel = document.getElementById('ck-comp');
+  sel.innerHTML = '<option value="">Selecione...</option>' + colaboradores.map(c=>`<option>${c.nome}</option>`).join('');
+  document.getElementById('ck-data').value = new Date().toISOString().slice(0,10);
+  document.getElementById('ck-obs').value = '';
+  document.getElementById('ck-msg').textContent = '';
+  // Montar lista de critérios com checkboxes
+  const lista = document.getElementById('ck-criterios-list');
+  lista.innerHTML = AV_CRITERIOS.map(c=>`
+    <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--sur2);border-radius:6px;cursor:pointer;font-size:12px">
+      <input type="checkbox" id="ck-crit-${c.id}" style="accent-color:var(--acc);width:14px;height:14px">
+      <span>${c.label}</span>
+    </label>`).join('');
+  document.getElementById('modal-checklist').classList.add('open');
+}
+
+function salvarChecklist() {
+  const comp = document.getElementById('ck-comp').value;
+  const data = document.getElementById('ck-data').value;
+  const periodo = document.getElementById('ck-periodo').value;
+  const msg  = document.getElementById('ck-msg');
+  if(!comp||!data){msg.style.color='var(--dan)';msg.textContent='⚠ Preencha colaborador e data.';return;}
+  const cumpridos = AV_CRITERIOS.filter(c=>document.getElementById('ck-crit-'+c.id)?.checked).map(c=>c.id);
+  const pct = Math.round(cumpridos.length/AV_CRITERIOS.length*100);
+  checklists.push({id:'CK-'+Date.now(),comp,data,periodo,cumpridos,total:AV_CRITERIOS.length,pct,obs:document.getElementById('ck-obs').value.trim(),criadoEm:new Date().toISOString()});
+  saveChecklists();
+  msg.style.color='var(--acc3)'; msg.textContent=`✅ ${pct}% cumprido!`;
+  setTimeout(()=>{closeModal('modal-checklist');renderChecklist();renderAvDash();},1000);
+}
+
+function limparCkFiltros(){
+  ['ck-f-comp','ck-f-de','ck-f-ate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  renderChecklist();
+}
+
+function renderChecklist() {
+  const compSel = document.getElementById('ck-f-comp');
+  if(compSel){const v=compSel.value;compSel.innerHTML='<option value="">Todos</option>'+colaboradores.map(c=>`<option>${c.nome}</option>`).join('');compSel.value=v;}
+  const fc  = document.getElementById('ck-f-comp')?.value||'';
+  const fpe = document.getElementById('ck-f-per')?.value||'';
+  const fde = document.getElementById('ck-f-de')?.value||'';
+  const fat = document.getElementById('ck-f-ate')?.value||'';
+  const d = checklists.filter(c=>{
+    if(fc&&c.comp!==fc) return false;
+    if(fpe&&c.periodo!==fpe) return false;
+    if(fde&&c.data<fde) return false;
+    if(fat&&c.data>fat) return false;
+    return true;
+  });
+  const tb = document.getElementById('tb-check');
+  if(!d.length){tb.innerHTML='<tr><td colspan="8" class="empty"><div class="eico">📋</div>Nenhum checklist</td></tr>';return;}
+  tb.innerHTML=[...d].reverse().map(c=>`<tr>
+    <td style="font-size:12px;white-space:nowrap">${c.data?c.data.split('-').reverse().join('/'):'—'}</td>
+    <td style="font-weight:600;font-size:12px">${c.comp}</td>
+    <td><span class="badge b-plan">${c.periodo}</span></td>
+    <td style="color:var(--acc3);font-weight:600">${c.cumpridos.length}</td>
+    <td style="color:var(--mut2)">${c.total}</td>
+    <td><div style="display:flex;align-items:center;gap:6px">
+      <div style="width:60px;height:6px;background:var(--sur3);border-radius:3px;overflow:hidden"><div style="width:${c.pct}%;height:100%;background:${c.pct>=70?'var(--acc3)':c.pct>=40?'var(--warn)':'var(--dan)'};border-radius:3px"></div></div>
+      <span style="font-size:11px;font-weight:700;color:${c.pct>=70?'var(--acc3)':c.pct>=40?'var(--warn)':'var(--dan)'}">${c.pct}%</span>
+    </div></td>
+    <td style="font-size:11px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.obs||'—'}</td>
+    <td><button class="btn btn-xs" style="background:#f04f4f18;color:var(--dan);border:1px solid #f04f4f30" onclick="excluirChecklist('${c.id}')">🗑</button></td>
+  </tr>`).join('');
+}
+
+function excluirChecklist(id){
+  if(!confirm('Excluir este checklist?')) return;
+  checklists=checklists.filter(c=>c.id!==id);
+  saveChecklists(); renderChecklist(); renderAvDash();
+}
+
+// ── PAINEL GERAL AVALIAÇÃO ────────────────────────────────────
+function limparAvDFiltros(){
+  ['avd-f-comp','avd-f-de','avd-f-ate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  renderAvDash();
+}
+
+function renderAvDash() {
+  const compSel = document.getElementById('avd-f-comp');
+  if(compSel){const v=compSel.value;compSel.innerHTML='<option value="">Todos</option>'+colaboradores.map(c=>`<option>${c.nome}</option>`).join('');compSel.value=v;}
+  const fc  = document.getElementById('avd-f-comp')?.value||'';
+  const fde = document.getElementById('avd-f-de')?.value||'';
+  const fat = document.getElementById('avd-f-ate')?.value||'';
+
+  const comps = fc ? colaboradores.filter(c=>c.nome===fc) : colaboradores;
+  const el = document.getElementById('av-dash-content');
+  if(!comps.length){el.innerHTML='<div class="empty"><div class="eico">👥</div>Nenhum colaborador</div>';return;}
+
+  el.innerHTML = comps.map(c=>{
+    // Ocorrências do colaborador no período
+    const ocs = ocorrencias.filter(o=>{
+      if(o.comp!==c.nome) return false;
+      if(fde&&o.data<fde) return false;
+      if(fat&&o.data>fat) return false;
+      return true;
+    });
+    const posTotal = ocs.filter(o=>o.tipo==='positivo').reduce((s,o)=>s+o.pontos,0);
+    const negTotal = ocs.filter(o=>o.tipo==='negativo').reduce((s,o)=>s+o.pontos,0);
+    const saldo = posTotal - negTotal;
+
+    // Checklists do colaborador no período
+    const cks = checklists.filter(k=>{
+      if(k.comp!==c.nome) return false;
+      if(fde&&k.data<fde) return false;
+      if(fat&&k.data>fat) return false;
+      return true;
+    });
+    const pctCheck = cks.length ? Math.round(cks.reduce((s,k)=>s+k.pct,0)/cks.length) : null;
+
+    // Nota manual
+    const notaManual = c.media || 0;
+    const notaManualPct = Math.round(notaManual/5*100);
+
+    // Score combinado
+    const partes = [];
+    if(notaManual>0) partes.push(notaManualPct);
+    if(pctCheck!==null) partes.push(pctCheck);
+    if(ocs.length>0){ const saldoPct=Math.min(100,Math.max(0,50+saldo*5)); partes.push(saldoPct); }
+    const scoreFinal = partes.length ? Math.round(partes.reduce((a,b)=>a+b,0)/partes.length) : 0;
+    const corScore = scoreFinal>=70?'var(--acc3)':scoreFinal>=40?'var(--warn)':'var(--dan)';
+
+    return `<div class="twrap" style="margin-bottom:16px">
+      <div class="twrap-hd">
+        <h3>${c.nome} <span style="font-size:11px;color:var(--mut2);font-weight:400">${c.cargo||''}</span></h3>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:11px;color:var(--mut2)">Score geral</span>
+          <span style="font-family:var(--fh);font-size:24px;font-weight:800;color:${corScore}">${scoreFinal}%</span>
+        </div>
+      </div>
+      <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+        <div class="sc c1">
+          <div class="sc-lbl">Nota Manual (estrelas)</div>
+          <div class="sc-val">${notaManual||'—'}<span style="font-size:14px">/5</span></div>
+          <div class="sc-sub">${notaManualPct}% — ${notaManual>=4?'Ótimo':notaManual>=3?'Bom':notaManual>0?'Regular':'Sem avaliação'}</div>
+        </div>
+        <div class="sc c4">
+          <div class="sc-lbl">Checklist (média)</div>
+          <div class="sc-val">${pctCheck!==null?pctCheck+'%':'—'}</div>
+          <div class="sc-sub">${cks.length} checklist(s)</div>
+        </div>
+        <div class="sc ${saldo>=0?'c4':'c3'}">
+          <div class="sc-lbl">Ocorrências (saldo)</div>
+          <div class="sc-val" style="color:${saldo>=0?'var(--acc3)':'var(--dan)'}">${saldo>=0?'+':''}${saldo}</div>
+          <div class="sc-sub">+${posTotal} pos / −${negTotal} neg</div>
+        </div>
+        <div class="sc c5">
+          <div class="sc-lbl">Score Final</div>
+          <div class="sc-val" style="color:${corScore}">${scoreFinal}%</div>
+          <div class="sc-sub">${scoreFinal>=70?'🟢 Bom desempenho':scoreFinal>=40?'🟡 Atenção':'🔴 Precisa melhorar'}</div>
+        </div>
+      </div>
+      ${ocs.length?`<div style="padding:0 16px 16px">
+        <div style="font-size:11px;font-weight:700;color:var(--mut2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Últimas ocorrências</div>
+        ${[...ocs].reverse().slice(0,3).map(o=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px">
+          <span class="badge ${o.tipo==='positivo'?'b-fin':'b-late'}" style="flex-shrink:0">${o.tipo==='positivo'?'✅':' ⚠'} ${o.tipo==='positivo'?'+':'−'}${o.pontos}</span>
+          <span style="color:var(--mut2)">${o.data?o.data.split('-').reverse().join('/'):'—'}</span>
+          <span>${o.critLabel}</span>
+          <span style="color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">— ${o.desc}</span>
+        </div>`).join('')}
+      </div>`:''}
+    </div>`;
+  }).join('');
 }
 
 
