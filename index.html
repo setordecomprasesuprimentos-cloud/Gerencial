@@ -198,6 +198,7 @@ input[type=date]{color-scheme:dark}
       <button class="btn btn-green btn-sm" onclick="backupExcel()" title="Salvar backup Excel">📊 Excel</button>
       <label class="btn btn-ghost btn-sm" style="cursor:pointer" title="Restaurar backup JSON">📂 Restaurar<input type="file" accept=".json" onchange="restaurarJSON(event)" style="display:none"></label>
       <button class="btn btn-ghost btn-sm" onclick="openModalObras()" title="Gerenciar Obras">🏗 Obras</button>
+      <button class="btn btn-ghost btn-sm" onclick="openModalStatus()" title="Gerenciar Status">🏷 Status</button>
     </div>
     <div class="gbadge">👩‍💼 Gestora: <span>Wanessa Lopes</span></div>
     <div class="gbadge"><span id="sync-status" style="font-size:11px">🔄 Conectando...</span></div>
@@ -386,11 +387,7 @@ input[type=date]{color-scheme:dark}
       <div class="fg"><label>Data de Abertura *</label><input type="date" id="nf-dtab"></div>
       <div class="fg"><label>Prazo para Fechar</label><input type="date" id="nf-prazo"></div>
       <div class="fg"><label>Status Inicial</label>
-        <select id="nf-status">
-          <option>Pendente</option><option>Aguardando PGT Cliente</option>
-          <option>Aguardando Iniciar Obra</option><option>Finalizada</option>
-          <option>Reprovado</option><option>Valor S/BDI Abaixo</option>
-        </select>
+        <select id="nf-status"></select>
       </div>
       <div class="fg"><label>Data que Fechou</label><input type="date" id="nf-fechou"></div>
     </div>
@@ -690,9 +687,7 @@ input[type=date]{color-scheme:dark}
     </div>
     <div class="fgrid">
       <div class="fg"><label>Status</label>
-        <select id="m-status"><option>Pendente</option><option>Finalizada</option>
-          <option>Aguardando PGT Cliente</option><option>Aguardando Iniciar Obra</option>
-          <option>Reprovado</option><option>Valor S/BDI Abaixo</option></select>
+        <select id="m-status"></select>
       </div>
       <div class="fg"><label>Comprador</label>
         <select id="m-comp"><option value="">Selecione...</option></select>
@@ -713,6 +708,31 @@ input[type=date]{color-scheme:dark}
       <button class="btn btn-primary" onclick="confirmarUpd()">Salvar</button>
       <button class="btn btn-ghost" onclick="closeModal('modal-upd')">Cancelar</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL GERENCIAR STATUS -->
+<div class="modal-ov" id="modal-status">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">🏷 Gerenciar Status <button class="xbtn" onclick="closeModal('modal-status')">✕</button></div>
+    
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--mut2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Status Padrão (não removíveis)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${STATUS_PADRAO.map(s=>`<span style="background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:4px 10px;font-size:12px">${s}</span>`).join('')}
+      </div>
+    </div>
+
+    <div style="font-size:11px;font-weight:700;color:var(--mut2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Adicionar Novo Status</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <input type="text" id="ns-nome" placeholder="Nome do novo status..." style="flex:1" onkeydown="if(event.key==='Enter')adicionarStatus()">
+      <button class="btn btn-primary" onclick="adicionarStatus()">+ Adicionar</button>
+    </div>
+    <div id="ns-msg" style="font-size:12px;margin-bottom:10px"></div>
+    
+    <div style="font-size:11px;font-weight:700;color:var(--mut2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Status Personalizados</div>
+    <div id="status-custom-lista" style="max-height:220px;overflow-y:auto"></div>
+    <div style="margin-top:10px;font-size:11px;color:var(--mut2)" id="status-custom-count"></div>
   </div>
 </div>
 
@@ -810,6 +830,15 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // ── CONSTANTES ──────────────────────────────────────────────
+// ── STATUS CUSTOMIZÁVEIS ────────────────────────────────────
+const STATUS_PADRAO = ['Pendente','Finalizada','Aguardando PGT Cliente','Aguardando Iniciar Obra','Reprovado','Valor S/BDI Abaixo'];
+let STATUS_CUSTOM = JSON.parse(localStorage.getItem('status_custom_v1') || '[]');
+function getAllStatus() { return [...STATUS_PADRAO, ...STATUS_CUSTOM]; }
+function saveStatusCustom() {
+  localStorage.setItem('status_custom_v1', JSON.stringify(STATUS_CUSTOM));
+  db.collection('config').doc('status_custom').set({ list: STATUS_CUSTOM }).catch(()=>{});
+}
+
 let OBRAS = JSON.parse(localStorage.getItem('obras_v1') || 'null') || [
   'PMI','Galpão de Santana do Paraíso','CREAS','Escola Albertino',
   'Escola Benvinda','Escola Altina','Turmalina',
@@ -864,6 +893,12 @@ async function initFirebase() {
   setSyncStatus('saving');
   try {
     // Carrega configurações (obras e compradores)
+    // Carregar status customizados
+    const cfgStatus = await db.collection('config').doc('status_custom').get();
+    if(cfgStatus.exists && cfgStatus.data().list) {
+      STATUS_CUSTOM = cfgStatus.data().list;
+      localStorage.setItem('status_custom_v1', JSON.stringify(STATUS_CUSTOM));
+    }
     const cfgObras = await db.collection('config').doc('obras').get();
     if (cfgObras.exists && cfgObras.data().list?.length) {
       OBRAS = cfgObras.data().list;
@@ -916,6 +951,13 @@ async function initFirebase() {
         localStorage.setItem('comps_v1', JSON.stringify(COMPS));
         populaSelects();
         if (document.getElementById('tab-compradores').classList.contains('active')) renderComps();
+      }
+    });
+    db.collection('config').doc('status_custom').onSnapshot(snap => {
+      if (snap.exists && snap.data().list) {
+        STATUS_CUSTOM = snap.data().list;
+        localStorage.setItem('status_custom_v1', JSON.stringify(STATUS_CUSTOM));
+        populaSelects();
       }
     });
 
@@ -1002,12 +1044,79 @@ function populaSelects() {
     const def = id==='nf-obra' ? '<option value="">Selecione...</option>' : '<option value="">Todas as obras</option>';
     el.innerHTML = def + OBRAS.map(o=>`<option>${o}</option>`).join('');
   });
-  // Populate comprador selects dynamically
   ['f-comp','nf-comp','m-comp'].forEach(id => {
     const el=document.getElementById(id); if(!el) return;
     const isFilter = id === 'f-comp';
     const def = isFilter ? '<option value="">Todos</option>' : '<option value="">Selecione...</option>';
     el.innerHTML = def + COMPS.map(c=>`<option>${c}</option>`).join('');
+  });
+  // Status dinâmicos
+  const allStatus = getAllStatus();
+  const nfStatus = document.getElementById('nf-status');
+  if(nfStatus) nfStatus.innerHTML = allStatus.map(s=>`<option>${s}</option>`).join('');
+  const mStatus = document.getElementById('m-status');
+  if(mStatus) mStatus.innerHTML = allStatus.map(s=>`<option>${s}</option>`).join('');
+}
+
+// ── MODAL STATUS ─────────────────────────────────────────────
+function openModalStatus() {
+  document.getElementById('ns-nome').value='';
+  document.getElementById('ns-msg').textContent='';
+  renderStatusLista();
+  document.getElementById('modal-status').classList.add('open');
+  setTimeout(()=>document.getElementById('ns-nome').focus(),100);
+}
+function renderStatusLista() {
+  const count = document.getElementById('status-custom-count');
+  if(count) count.textContent = STATUS_CUSTOM.length ? `${STATUS_CUSTOM.length} status personalizado(s)` : 'Nenhum status personalizado ainda.';
+  const lista = document.getElementById('status-custom-lista');
+  if(!lista) return;
+  if(!STATUS_CUSTOM.length){
+    lista.innerHTML='<div style="font-size:12px;color:var(--mut2);padding:8px 0">Nenhum status personalizado cadastrado.</div>';
+    return;
+  }
+  lista.innerHTML = STATUS_CUSTOM.map((s,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--sur2);border-radius:8px;margin-bottom:6px">
+      <span style="flex:1;font-size:13px;font-weight:500">${s}</span>
+      <button onclick="excluirStatus(${i})" style="background:#f04f4f18;color:var(--dan);border:1px solid #f04f4f30;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">🗑</button>
+    </div>`).join('');
+}
+function adicionarStatus() {
+  const nome = document.getElementById('ns-nome').value.trim();
+  const msg  = document.getElementById('ns-msg');
+  if(!nome){msg.style.color='var(--dan)';msg.textContent='⚠ Informe o nome do status.';return;}
+  if(getAllStatus().includes(nome)){msg.style.color='var(--dan)';msg.textContent='⚠ Status já existe.';return;}
+  STATUS_CUSTOM.push(nome);
+  saveStatusCustom();
+  populaSelects();
+  populateMultiSelectStatus();
+  document.getElementById('ns-nome').value='';
+  msg.style.color='var(--acc3)';msg.textContent=`✅ "${nome}" adicionado!`;
+  setTimeout(()=>msg.textContent='',3000);
+  renderStatusLista();
+}
+function excluirStatus(i) {
+  if(!confirm(`Excluir status "${STATUS_CUSTOM[i]}"?`)) return;
+  STATUS_CUSTOM.splice(i,1);
+  saveStatusCustom();
+  populaSelects();
+  populateMultiSelectStatus();
+  renderStatusLista();
+}
+function populateMultiSelectStatus() {
+  const allStatus = getAllStatus();
+  const statusOpts = allStatus.map(s=>({value:s,label:s}));
+  ['df-status-ms','f-status-ms','fa-status-ms','cp-status-ms'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && el._getValues) {
+      const cur = el._getValues();
+      createMultiSelect(id, statusOpts, 'Todos status', ()=>{
+        if(id.startsWith('df')) renderDash();
+        else if(id.startsWith('f-')) renderReq();
+        else if(id.startsWith('fa')) renderAnalise();
+        else if(id.startsWith('cp')) renderComps();
+      });
+    }
   });
 }
 
@@ -2724,14 +2833,7 @@ function msClear(id) {
 }
 
 function initMultiSelects() {
-  const statusOpts = [
-    {value:'Pendente',label:'Pendente'},
-    {value:'Finalizada',label:'Finalizada'},
-    {value:'Aguardando PGT Cliente',label:'Ag. PGT Cliente'},
-    {value:'Aguardando Iniciar Obra',label:'Ag. Iniciar Obra'},
-    {value:'Reprovado',label:'Reprovado'},
-    {value:'Valor S/BDI Abaixo',label:'S/BDI Abaixo'}
-  ];
+  const statusOpts = getAllStatus().map(s=>({value:s,label:s.length>20?s.slice(0,18)+'…':s}));
   const tipoOpts = [{value:'Planejado',label:'Planejado'},{value:'Urgente',label:'Urgente'}];
   const prioOpts = [{value:'Alta',label:'Alta'},{value:'Média',label:'Média'},{value:'Baixa',label:'Baixa'}];
   const obraOpts = () => OBRAS.map(o => ({value:o,label:o}));
