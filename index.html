@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -218,6 +217,7 @@ input[type=date]{color-scheme:dark}
   <button onclick="showTab('nova')">➕ Nova Requisição</button>
   <button onclick="showTab('contatos')">📞 Contatos com Obras</button>
   <button onclick="showTab('avaliacao')">⭐ Avaliação</button>
+  <button onclick="showTab('checklist')">✅ Checklist Diário</button>
 </nav>
 
 <main>
@@ -536,6 +536,49 @@ input[type=date]{color-scheme:dark}
   </div>
 
 </div>
+<!-- CHECKLIST DIÁRIO -->
+<div class="tab-content" id="tab-checklist">
+  <div class="stitle">✅ Checklist Diário <span class="pill green" id="ck-pill">0</span></div>
+
+  <!-- Filtros e ações -->
+  <div class="fbar">
+    <div class="fg"><label>Comprador / Responsável</label>
+      <select id="ckd-f-comp" onchange="renderChecklistDiario()">
+        <option value="">Todos</option>
+      </select>
+    </div>
+    <div class="fg"><label>Data</label><input type="date" id="ckd-f-data" onchange="renderChecklistDiario()"></div>
+    <div class="fg"><label>Status</label>
+      <select id="ckd-f-status" onchange="renderChecklistDiario()">
+        <option value="">Todos</option>
+        <option value="pendente">⏳ Pendentes</option>
+        <option value="concluido">✅ Concluídos</option>
+        <option value="parcial">🔶 Parciais</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;align-items:flex-end;flex-shrink:0">
+      <button class="btn btn-ghost btn-sm" onclick="limparCkdF()">✕ Limpar</button>
+      <button class="btn btn-green btn-sm" onclick="exportExcelChecklist()">⬇ Excel</button>
+      <button class="btn btn-primary btn-sm" onclick="openModalCkd()">+ Novo Checklist</button>
+    </div>
+  </div>
+
+  <!-- Cards resumo do dia -->
+  <div class="cards-grid" id="ckd-cards" style="margin-bottom:18px"></div>
+
+  <!-- Lista de checklists -->
+  <div id="ckd-lista"></div>
+
+  <!-- Configurar tarefas padrão -->
+  <div class="twrap" style="margin-top:20px">
+    <div class="twrap-hd">
+      <h3>⚙️ Tarefas Padrão do Checklist</h3>
+      <button class="btn btn-primary btn-sm" onclick="openModalTarefa()">+ Nova Tarefa</button>
+    </div>
+    <div style="padding:16px" id="ckd-tarefas-lista"></div>
+  </div>
+</div>
+
 </main>
 
 <!-- MODAL OCORRÊNCIA -->
@@ -761,6 +804,52 @@ input[type=date]{color-scheme:dark}
 </div>
 
 
+<!-- MODAL NOVO CHECKLIST DIÁRIO -->
+<div class="modal-ov" id="modal-ckd">
+  <div class="modal" style="max-width:640px;max-height:92vh;overflow-y:auto">
+    <div class="modal-title">✅ Novo Checklist Diário <button class="xbtn" onclick="closeModal('modal-ckd')">✕</button></div>
+    <div class="fgrid">
+      <div class="fg"><label>Responsável *</label>
+        <select id="ckd-comp"><option value="">Selecione...</option></select>
+      </div>
+      <div class="fg"><label>Data *</label><input type="date" id="ckd-data"></div>
+    </div>
+    <div style="margin:14px 0 8px;font-size:11px;font-weight:700;color:var(--mut2);text-transform:uppercase;letter-spacing:.6px">Tarefas do Dia</div>
+    <div id="ckd-modal-tarefas" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px"></div>
+    <div class="fg" style="margin-bottom:14px"><label>Observações</label>
+      <textarea id="ckd-obs" rows="2" placeholder="Anotações gerais do dia..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="btn btn-primary" onclick="salvarChecklistDiario()">💾 Salvar</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-ckd')">Cancelar</button>
+      <span id="ckd-msg" style="font-size:12px"></span>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVA TAREFA PADRÃO -->
+<div class="modal-ov" id="modal-tarefa">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">⚙️ Tarefa Padrão <button class="xbtn" onclick="closeModal('modal-tarefa')">✕</button></div>
+    <input type="hidden" id="tf-edit-id">
+    <div class="fg" style="margin-bottom:12px"><label>Nome da Tarefa *</label>
+      <input type="text" id="tf-nome" placeholder="Ex: Analisar e-mails"></div>
+    <div class="fg" style="margin-bottom:14px"><label>Recorrência</label>
+      <select id="tf-rec">
+        <option value="diaria">Diária</option>
+        <option value="2x_semana">2x por semana</option>
+        <option value="semanal">Semanal</option>
+        <option value="opcional">Opcional</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="btn btn-primary" onclick="salvarTarefa()">💾 Salvar</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-tarefa')">Cancelar</button>
+      <span id="tf-msg" style="font-size:12px"></span>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL COLABORADOR -->
 <div class="modal-ov" id="modal-colaborador">
   <div class="modal" style="max-width:600px;max-height:90vh;overflow-y:auto">
@@ -973,6 +1062,12 @@ async function initFirebase() {
       if(snapOc.exists && snapOc.data().list) { ocorrencias = snapOc.data().list; localStorage.setItem('av_ocorr_v1', JSON.stringify(ocorrencias)); }
       const snapCk = await db.collection('dados').doc('av_checklists').get();
       if(snapCk.exists && snapCk.data().list) { checklists = snapCk.data().list; localStorage.setItem('av_check_v1', JSON.stringify(checklists)); }
+      // Checklist diário
+      const snapCkd = await db.collection('dados').doc('ckd_diarios').get();
+      if(snapCkd.exists && snapCkd.data().list) { checklistsDiarios = snapCkd.data().list; localStorage.setItem('ckd_diarios_v1', JSON.stringify(checklistsDiarios)); }
+      // Tarefas padrão
+      const snapTf = await db.collection('config').doc('ckd_tarefas').get();
+      if(snapTf.exists && snapTf.data().list?.length) { tarefasPadrao = snapTf.data().list; localStorage.setItem('ckd_tarefas_v1', JSON.stringify(tarefasPadrao)); }
     } catch(e) {}
 
     // Se Firebase estiver vazio, faz seed inicial e sobe
@@ -1126,9 +1221,9 @@ function showTab(id) {
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
-  const tabs=['dashboard','requisicoes','analise','compradores','nova','contatos','avaliacao'];
+  const tabs=['dashboard','requisicoes','analise','compradores','nova','contatos','avaliacao','checklist'];
   const i=tabs.indexOf(id); if(i>=0) document.querySelectorAll('nav button')[i].classList.add('active');
-  ({dashboard:renderDash,requisicoes:renderReq,analise:renderAnalise,compradores:renderComps,contatos:renderContatos,avaliacao:renderAvaliacao})[id]?.();
+  ({dashboard:renderDash,requisicoes:renderReq,analise:renderAnalise,compradores:renderComps,contatos:renderContatos,avaliacao:renderAvaliacao,checklist:renderChecklistDiario})[id]?.();
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────
@@ -2273,7 +2368,9 @@ function backupJSON() {
     reqs,
     contatos,
     comps: COMPS,
-    obras: OBRAS
+    obras: OBRAS,
+    checklistsDiarios,
+    tarefasPadrao
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const a = document.createElement('a');
@@ -2925,6 +3022,293 @@ function refreshAllMultiSelects() {
 
   // Atualiza selects do modal de atualização
   populaSelects();
+}
+
+// ── CHECKLIST DIÁRIO ──────────────────────────────────────────
+const TAREFAS_PADRAO_DEFAULT = [
+  {id:'t1', nome:'Analisar e-mails', rec:'diaria'},
+  {id:'t2', nome:'Imprimir NF do e-mail e NF Stock', rec:'diaria'},
+  {id:'t3', nome:'Imprimir todos os boletos', rec:'diaria'},
+  {id:'t4', nome:'Iniciar todas as requisições', rec:'diaria'},
+  {id:'t5', nome:'Fazer contato com as obras', rec:'diaria'},
+  {id:'t6', nome:'Verificar necessidades das obras', rec:'diaria'},
+  {id:'t7', nome:'Responder todos os fornecedores', rec:'diaria'},
+  {id:'t8', nome:'Atualizar Trello', rec:'diaria'},
+];
+
+let tarefasPadrao = JSON.parse(localStorage.getItem('ckd_tarefas_v1') || 'null') || TAREFAS_PADRAO_DEFAULT;
+let checklistsDiarios = JSON.parse(localStorage.getItem('ckd_diarios_v1') || '[]');
+
+function saveTarefasPadrao() {
+  localStorage.setItem('ckd_tarefas_v1', JSON.stringify(tarefasPadrao));
+  db.collection('config').doc('ckd_tarefas').set({list: tarefasPadrao}).catch(()=>{});
+}
+function saveChecklistsDiarios() {
+  localStorage.setItem('ckd_diarios_v1', JSON.stringify(checklistsDiarios));
+  setSyncStatus('saving');
+  db.collection('dados').doc('ckd_diarios').set({list: checklistsDiarios})
+    .then(()=>setSyncStatus('ok')).catch(()=>setSyncStatus('error'));
+}
+
+// ── MODAL TAREFA PADRÃO ────────────────────────────────────────
+function openModalTarefa(id) {
+  const t = id ? tarefasPadrao.find(x=>x.id===id) : null;
+  document.getElementById('tf-edit-id').value = id||'';
+  document.getElementById('tf-nome').value = t ? t.nome : '';
+  document.getElementById('tf-rec').value = t ? t.rec : 'diaria';
+  document.getElementById('tf-msg').textContent = '';
+  document.getElementById('modal-tarefa').classList.add('open');
+  setTimeout(()=>document.getElementById('tf-nome').focus(),100);
+}
+function salvarTarefa() {
+  const nome = document.getElementById('tf-nome').value.trim();
+  const msg  = document.getElementById('tf-msg');
+  if(!nome){msg.style.color='var(--dan)';msg.textContent='⚠ Informe o nome.';return;}
+  const rec  = document.getElementById('tf-rec').value;
+  const editId = document.getElementById('tf-edit-id').value;
+  if(editId) {
+    const idx = tarefasPadrao.findIndex(t=>t.id===editId);
+    tarefasPadrao[idx] = {...tarefasPadrao[idx], nome, rec};
+    msg.style.color='var(--acc3)'; msg.textContent='✅ Atualizado!';
+  } else {
+    tarefasPadrao.push({id:'t'+Date.now(), nome, rec});
+    msg.style.color='var(--acc3)'; msg.textContent='✅ Tarefa adicionada!';
+  }
+  saveTarefasPadrao();
+  setTimeout(()=>{closeModal('modal-tarefa'); renderTarefasPadrao();},800);
+}
+function excluirTarefa(id) {
+  if(!confirm('Excluir esta tarefa?')) return;
+  tarefasPadrao = tarefasPadrao.filter(t=>t.id!==id);
+  saveTarefasPadrao(); renderTarefasPadrao();
+}
+function renderTarefasPadrao() {
+  const el = document.getElementById('ckd-tarefas-lista');
+  if(!el) return;
+  const recLabel = {diaria:'Diária', '2x_semana':'2x/semana', semanal:'Semanal', opcional:'Opcional'};
+  el.innerHTML = tarefasPadrao.map(t=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--sur2);border-radius:8px;margin-bottom:6px">
+      <span style="flex:1;font-size:13px;font-weight:500">📋 ${t.nome}</span>
+      <span class="tag">${recLabel[t.rec]||t.rec}</span>
+      <button onclick="openModalTarefa('${t.id}')" class="btn btn-ghost btn-xs">✏</button>
+      <button onclick="excluirTarefa('${t.id}')" class="btn btn-xs" style="background:#f04f4f18;color:var(--dan);border:1px solid #f04f4f30">🗑</button>
+    </div>`).join('') || '<div style="color:var(--mut2);font-size:13px">Nenhuma tarefa cadastrada.</div>';
+}
+
+// ── MODAL NOVO CHECKLIST DIÁRIO ───────────────────────────────
+function openModalCkd() {
+  // populate comp select
+  const sel = document.getElementById('ckd-comp');
+  sel.innerHTML = '<option value="">Selecione...</option>' + COMPS.map(c=>`<option>${c}</option>`).join('');
+  document.getElementById('ckd-data').value = new Date().toISOString().slice(0,10);
+  document.getElementById('ckd-obs').value = '';
+  document.getElementById('ckd-msg').textContent = '';
+
+  // Build tarefas list with checkboxes + optional date
+  const lista = document.getElementById('ckd-modal-tarefas');
+  lista.innerHTML = tarefasPadrao.map(t=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--sur2);border-radius:8px">
+      <input type="checkbox" id="ckd-t-${t.id}" style="accent-color:var(--acc);width:16px;height:16px;cursor:pointer">
+      <label for="ckd-t-${t.id}" style="flex:1;font-size:13px;cursor:pointer">${t.nome}</label>
+      <input type="date" id="ckd-td-${t.id}" title="Data opcional para esta tarefa" style="width:130px;font-size:11px;padding:4px 8px">
+    </div>`).join('');
+
+  document.getElementById('modal-ckd').classList.add('open');
+}
+
+function salvarChecklistDiario() {
+  const comp = document.getElementById('ckd-comp').value;
+  const data = document.getElementById('ckd-data').value;
+  const msg  = document.getElementById('ckd-msg');
+  if(!comp||!data){msg.style.color='var(--dan)';msg.textContent='⚠ Selecione responsável e data.';return;}
+
+  const tarefas = tarefasPadrao.map(t=>({
+    id: t.id,
+    nome: t.nome,
+    rec: t.rec,
+    feito: document.getElementById('ckd-t-'+t.id)?.checked || false,
+    dataOpcional: document.getElementById('ckd-td-'+t.id)?.value || ''
+  }));
+
+  const total    = tarefas.length;
+  const feitos   = tarefas.filter(t=>t.feito).length;
+  const pct      = total ? Math.round(feitos/total*100) : 0;
+  const statusGeral = feitos===total ? 'concluido' : feitos===0 ? 'pendente' : 'parcial';
+
+  checklistsDiarios.push({
+    id: 'CKD-'+Date.now(), comp, data, tarefas, total, feitos, pct,
+    statusGeral, obs: document.getElementById('ckd-obs').value.trim(),
+    criadoEm: new Date().toISOString()
+  });
+  saveChecklistsDiarios();
+  msg.style.color='var(--acc3)'; msg.textContent=`✅ ${feitos}/${total} tarefas (${pct}%)!`;
+  setTimeout(()=>{closeModal('modal-ckd'); renderChecklistDiario();},1000);
+}
+
+function excluirChecklistDiario(id) {
+  if(!confirm('Excluir este checklist?')) return;
+  checklistsDiarios = checklistsDiarios.filter(c=>c.id!==id);
+  saveChecklistsDiarios(); renderChecklistDiario();
+}
+
+function editarChecklistDiario(id) {
+  const ck = checklistsDiarios.find(c=>c.id===id); if(!ck) return;
+  // populate comp select
+  const sel = document.getElementById('ckd-comp');
+  sel.innerHTML = '<option value="">Selecione...</option>' + COMPS.map(c=>`<option>${c}</option>`).join('');
+  sel.value = ck.comp;
+  document.getElementById('ckd-data').value = ck.data;
+  document.getElementById('ckd-obs').value = ck.obs||'';
+  document.getElementById('ckd-msg').textContent = '';
+
+  // Build tarefas with existing state
+  const lista = document.getElementById('ckd-modal-tarefas');
+  // Merge saved tarefas with current tarefas padrao (add new ones, keep old ones)
+  const allTarefas = tarefasPadrao.map(t=>{
+    const saved = ck.tarefas?.find(x=>x.id===t.id);
+    return saved || {id:t.id, nome:t.nome, rec:t.rec, feito:false, dataOpcional:''};
+  });
+  lista.innerHTML = allTarefas.map(t=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--sur2);border-radius:8px">
+      <input type="checkbox" id="ckd-t-${t.id}" ${t.feito?'checked':''} style="accent-color:var(--acc);width:16px;height:16px;cursor:pointer">
+      <label for="ckd-t-${t.id}" style="flex:1;font-size:13px;cursor:pointer">${t.nome}</label>
+      <input type="date" id="ckd-td-${t.id}" value="${t.dataOpcional||''}" title="Data opcional" style="width:130px;font-size:11px;padding:4px 8px">
+    </div>`).join('');
+
+  // On save, replace existing record
+  document.getElementById('modal-ckd').dataset.editId = id;
+  document.getElementById('modal-ckd').classList.add('open');
+}
+
+// Override salvarChecklistDiario to handle edit mode
+const _salvarCkdOrig = salvarChecklistDiario;
+// Patch save to handle edit
+document.addEventListener('DOMContentLoaded', ()=>{
+  // handled inline via editId check
+});
+
+function limparCkdF() {
+  ['ckd-f-comp','ckd-f-data','ckd-f-status'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  renderChecklistDiario();
+}
+
+function getChecklistDiarioFilt() {
+  const fc = document.getElementById('ckd-f-comp')?.value||'';
+  const fd = document.getElementById('ckd-f-data')?.value||'';
+  const fs = document.getElementById('ckd-f-status')?.value||'';
+  return checklistsDiarios.filter(c=>{
+    if(fc && c.comp!==fc) return false;
+    if(fd && c.data!==fd) return false;
+    if(fs && c.statusGeral!==fs) return false;
+    return true;
+  });
+}
+
+function renderChecklistDiario() {
+  // update comp filter select
+  const compSel = document.getElementById('ckd-f-comp');
+  if(compSel){const v=compSel.value;compSel.innerHTML='<option value="">Todos</option>'+COMPS.map(c=>`<option>${c}</option>`).join('');compSel.value=v;}
+
+  const d = getChecklistDiarioFilt();
+  document.getElementById('ck-pill').textContent = d.length;
+
+  // Cards resumo
+  const hoje = new Date().toISOString().slice(0,10);
+  const deHoje = checklistsDiarios.filter(c=>c.data===hoje);
+  const concluidos = d.filter(c=>c.statusGeral==='concluido').length;
+  const parciais   = d.filter(c=>c.statusGeral==='parcial').length;
+  const pendentes  = d.filter(c=>c.statusGeral==='pendente').length;
+  const mediaGeral = d.length ? Math.round(d.reduce((s,c)=>s+c.pct,0)/d.length) : 0;
+
+  document.getElementById('ckd-cards').innerHTML=`
+    <div class="sc c1"><div class="sc-lbl">Checklists Hoje</div><div class="sc-val">${deHoje.length}</div><div class="sc-sub">${hoje.split('-').reverse().join('/')}</div></div>
+    <div class="sc c4"><div class="sc-lbl">Concluídos</div><div class="sc-val" style="color:var(--acc3)">${concluidos}</div><div class="sc-sub">100% das tarefas</div></div>
+    <div class="sc c6"><div class="sc-lbl">Parciais</div><div class="sc-val" style="color:var(--warn)">${parciais}</div><div class="sc-sub">algumas pendentes</div></div>
+    <div class="sc c3"><div class="sc-lbl">Pendentes</div><div class="sc-val" style="color:var(--dan)">${pendentes}</div><div class="sc-sub">nenhuma feita</div></div>
+    <div class="sc c5"><div class="sc-lbl">Média Geral</div><div class="sc-val">${mediaGeral}%</div><div class="sc-sub">cumprimento</div></div>`;
+
+  // Lista de checklists
+  const lista = document.getElementById('ckd-lista');
+  if(!d.length){
+    lista.innerHTML='<div class="twrap"><div class="empty"><div class="eico">📋</div>Nenhum checklist encontrado</div></div>';
+    renderTarefasPadrao(); return;
+  }
+
+  const statusLabel = {concluido:'✅ Concluído', parcial:'🔶 Parcial', pendente:'⏳ Pendente'};
+  const statusCor   = {concluido:'var(--acc3)', parcial:'var(--warn)', pendente:'var(--dan)'};
+
+  lista.innerHTML = [...d].reverse().map(ck=>{
+    const tarefasHtml = (ck.tarefas||[]).map(t=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;background:${t.feito?'rgba(13,146,104,0.08)':'rgba(192,57,43,0.06)'}">
+        <span style="font-size:14px">${t.feito?'✅':'⬜'}</span>
+        <span style="font-size:12px;flex:1;${t.feito?'text-decoration:line-through;color:var(--mut2)':''}">${t.nome}</span>
+        ${t.dataOpcional?`<span style="font-size:10px;color:var(--acc2)">${t.dataOpcional.split('-').reverse().join('/')}</span>`:''}
+      </div>`).join('');
+
+    return `<div class="twrap" style="margin-bottom:14px">
+      <div class="twrap-hd">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div>
+            <div style="font-weight:700;font-size:14px">${ck.comp}</div>
+            <div style="font-size:11px;color:var(--mut2)">${ck.data.split('-').reverse().join('/')} · ${ck.criadoEm?new Date(ck.criadoEm).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}</div>
+          </div>
+          <span class="badge" style="background:${statusCor[ck.statusGeral]}20;color:${statusCor[ck.statusGeral]}">${statusLabel[ck.statusGeral]}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="text-align:right">
+            <div style="font-family:var(--fh);font-size:22px;font-weight:800;color:${statusCor[ck.statusGeral]}">${ck.pct}%</div>
+            <div style="font-size:10px;color:var(--mut2)">${ck.feitos}/${ck.total} tarefas</div>
+          </div>
+          <div style="display:flex;gap:5px">
+            <button class="btn btn-ghost btn-xs" onclick="editarChecklistDiario('${ck.id}')">✏</button>
+            <button class="btn btn-xs" style="background:#f04f4f18;color:var(--dan);border:1px solid #f04f4f30" onclick="excluirChecklistDiario('${ck.id}')">🗑</button>
+          </div>
+        </div>
+      </div>
+      <div style="padding:12px 16px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px">
+          ${tarefasHtml}
+        </div>
+        ${ck.obs?`<div style="margin-top:10px;font-size:12px;color:var(--mut2);padding:8px 12px;background:var(--sur2);border-radius:6px">💬 ${ck.obs}</div>`:''}
+      </div>
+      <!-- Barra de progresso -->
+      <div style="padding:0 16px 14px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--mut2);margin-bottom:4px">
+          <span>Progresso</span><span>${ck.feitos} de ${ck.total} tarefas concluídas</span>
+        </div>
+        <div style="height:6px;background:var(--sur3);border-radius:3px;overflow:hidden">
+          <div style="width:${ck.pct}%;height:100%;background:${statusCor[ck.statusGeral]};border-radius:3px;transition:width .5s"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  renderTarefasPadrao();
+}
+
+function exportExcelChecklist() {
+  const d = getChecklistDiarioFilt();
+  if(!d.length){alert('Sem dados para exportar.');return;}
+  const rows = [];
+  d.forEach(ck=>{
+    (ck.tarefas||[]).forEach(t=>{
+      rows.push({
+        'Data': ck.data.split('-').reverse().join('/'),
+        'Responsável': ck.comp,
+        'Tarefa': t.nome,
+        'Feito': t.feito?'Sim':'Não',
+        'Data Opcional': t.dataOpcional?t.dataOpcional.split('-').reverse().join('/'):'' ,
+        'Status Geral': {concluido:'Concluído',parcial:'Parcial',pendente:'Pendente'}[ck.statusGeral]||ck.statusGeral,
+        '% Cumprimento': ck.pct+'%',
+        'Observações': ck.obs||''
+      });
+    });
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = Object.keys(rows[0]).map(k=>({wch:Math.max(k.length,...rows.map(r=>String(r[k]||'').length))+2}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Checklist Diário');
+  XLSX.writeFile(wb, `Checklist_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
 // ── INIT ──────────────────────────────────────────────────────
