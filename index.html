@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -686,6 +687,8 @@ input[type=date]{color-scheme:dark}
       <button class="xbtn" onclick="closeModal('modal-upd')">✕</button>
     </div>
     <div class="fgrid">
+      <div class="fg"><label>Nº Requisição (editável)</label><input type="text" id="m-id-edit" placeholder="Ex: 1500-2026"></div>
+      <div class="fg"><label>Material / Descrição</label><input type="text" id="m-mat" placeholder="Descrição do material"></div>
       <div class="fg"><label>Status</label>
         <select id="m-status"></select>
       </div>
@@ -942,14 +945,14 @@ async function initFirebase() {
       if (snap.exists && snap.data().list?.length) {
         OBRAS = snap.data().list;
         localStorage.setItem('obras_v1', JSON.stringify(OBRAS));
-        populaSelects();
+        refreshAllMultiSelects();
       }
     });
     db.collection('config').doc('comps').onSnapshot(snap => {
       if (snap.exists && snap.data().list?.length) {
         COMPS = snap.data().list;
         localStorage.setItem('comps_v1', JSON.stringify(COMPS));
-        populaSelects();
+        refreshAllMultiSelects();
         if (document.getElementById('tab-compradores').classList.contains('active')) renderComps();
       }
     });
@@ -957,7 +960,7 @@ async function initFirebase() {
       if (snap.exists && snap.data().list) {
         STATUS_CUSTOM = snap.data().list;
         localStorage.setItem('status_custom_v1', JSON.stringify(STATUS_CUSTOM));
-        populaSelects();
+        refreshAllMultiSelects();
       }
     });
 
@@ -1088,8 +1091,7 @@ function adicionarStatus() {
   if(getAllStatus().includes(nome)){msg.style.color='var(--dan)';msg.textContent='⚠ Status já existe.';return;}
   STATUS_CUSTOM.push(nome);
   saveStatusCustom();
-  populaSelects();
-  populateMultiSelectStatus();
+  refreshAllMultiSelects();
   document.getElementById('ns-nome').value='';
   msg.style.color='var(--acc3)';msg.textContent=`✅ "${nome}" adicionado!`;
   setTimeout(()=>msg.textContent='',3000);
@@ -1099,8 +1101,7 @@ function excluirStatus(i) {
   if(!confirm(`Excluir status "${STATUS_CUSTOM[i]}"?`)) return;
   STATUS_CUSTOM.splice(i,1);
   saveStatusCustom();
-  populaSelects();
-  populateMultiSelectStatus();
+  refreshAllMultiSelects();
   renderStatusLista();
 }
 function populateMultiSelectStatus() {
@@ -1794,14 +1795,14 @@ function confirmarAddComp() {
   const msg = document.getElementById('nc-msg');
   if (!nome) { msg.style.color='var(--dan)'; msg.textContent='⚠ Informe o nome.'; return; }
   if (COMPS.includes(nome)) { msg.style.color='var(--dan)'; msg.textContent='⚠ Comprador já existe.'; return; }
-  COMPS.push(nome); saveComps(); populaSelects();
+  COMPS.push(nome); saveComps(); refreshAllMultiSelects();
   closeModal('modal-comp'); renderComps();
 }
 function excluirComp(nome) {
   const total = reqs.filter(r => r.comp === nome).length;
   const msg = total > 0 ? `\n⚠ Existem ${total} requisição(ões) atribuídas a este comprador.` : '';
   if (!confirm(`Excluir comprador "${nome}"?${msg}\nEsta ação não pode ser desfeita.`)) return;
-  COMPS = COMPS.filter(c => c !== nome); saveComps(); populaSelects(); renderComps();
+  COMPS = COMPS.filter(c => c !== nome); saveComps(); refreshAllMultiSelects(); renderComps();
 }
 
 function getCompFilt(nome) {
@@ -1912,6 +1913,8 @@ function salvarReq() {
 function openUpd(id) {
   editId=id; const r=reqs.find(x=>x.id===id); if(!r) return;
   document.getElementById('m-id').textContent=id;
+  document.getElementById('m-id-edit').value=id;
+  document.getElementById('m-mat').value=r.mat||'';
   document.getElementById('m-status').value=r.status;
   document.getElementById('m-comp').value=r.comp;
   document.getElementById('m-prazo').value=r.prazo||'';
@@ -1923,6 +1926,17 @@ function openUpd(id) {
 }
 function confirmarUpd() {
   const r=reqs.find(x=>x.id===editId); if(!r) return;
+  const novoId = (document.getElementById('m-id-edit').value||'').trim();
+  // Check if ID changed and conflicts
+  if (novoId && novoId !== editId && reqs.find(x=>x.id===novoId)) {
+    alert(`⚠ Nº ${novoId} já existe. Escolha outro.`); return;
+  }
+  if (novoId && novoId !== editId) {
+    r.id = novoId;
+    // update editId reference
+  }
+  const novoMat = (document.getElementById('m-mat').value||'').trim();
+  if (novoMat) r.mat = novoMat;
   r.status=document.getElementById('m-status').value;
   r.comp=document.getElementById('m-comp').value;
   r.prazo=document.getElementById('m-prazo').value;
@@ -2223,7 +2237,7 @@ function excluirObrasSelecionadas() {
   aviso += '\n\nEsta ação não pode ser desfeita.';
   if (!confirm(aviso)) return;
   nomes.forEach(n => { const i = OBRAS.indexOf(n); if (i>-1) OBRAS.splice(i,1); });
-  selectedObras.clear(); saveObras(); populaSelects(); renderObrasLista();
+  selectedObras.clear(); saveObras(); refreshAllMultiSelects(); renderObrasLista();
 }
 
 function adicionarObra() {
@@ -2231,7 +2245,7 @@ function adicionarObra() {
   const msg  = document.getElementById('no-msg');
   if (!nome) { msg.style.color='var(--dan)'; msg.textContent='⚠ Informe o nome da obra.'; return; }
   if (OBRAS.includes(nome)) { msg.style.color='var(--dan)'; msg.textContent='⚠ Obra já cadastrada.'; return; }
-  OBRAS.push(nome); saveObras(); populaSelects();
+  OBRAS.push(nome); saveObras(); refreshAllMultiSelects();
   document.getElementById('no-nome').value = '';
   msg.style.color='var(--acc3)'; msg.textContent=`✅ "${nome}" adicionada!`;
   setTimeout(()=>msg.textContent='', 3000);
@@ -2248,7 +2262,7 @@ function excluirObra(nome) {
   if (!confirm(aviso)) return;
   OBRAS.splice(OBRAS.indexOf(nome), 1);
   selectedObras.delete(nome);
-  saveObras(); populaSelects(); renderObrasLista();
+  saveObras(); refreshAllMultiSelects(); renderObrasLista();
 }
 
 // ── BACKUP & RESTAURAÇÃO ──────────────────────────────────────
@@ -2330,7 +2344,7 @@ function restaurarJSON(event) {
       localStorage.setItem('comps_v1', JSON.stringify(COMPS));
       localStorage.setItem('obras_v1', JSON.stringify(OBRAS));
 
-      populaSelects(); renderDash();
+      populaSelects(); refreshAllMultiSelects(); renderDash();
 
       // Sobe para Firebase
       try {
@@ -2544,6 +2558,23 @@ function salvarOcorrencia() {
   const critLabel = AV_CRITERIOS.find(c=>c.id===crit)?.label||crit;
   ocorrencias.push({id:'OC-'+Date.now(),comp,data,crit,critLabel,tipo,pontos,desc,criadoEm:new Date().toISOString()});
   saveOcorrencias();
+
+  // Recalcular média do colaborador com base nas ocorrências
+  const colab = colaboradores.find(c=>c.nome===comp);
+  if (colab) {
+    const ocs = ocorrencias.filter(o=>o.comp===comp);
+    const posTotal = ocs.filter(o=>o.tipo==='positivo').reduce((s,o)=>s+o.pontos,0);
+    const negTotal = ocs.filter(o=>o.tipo==='negativo').reduce((s,o)=>s+o.pontos,0);
+    const saldo = posTotal - negTotal;
+    // Ajusta a média: base da média manual + bônus/penalidade das ocorrências (limitado a 0-5)
+    const campos=['pont','resp','cond','norm','prod','org','neg','forn','obra','proat','resol','com','press','canal'];
+    const preenchidos=campos.map(f=>colab[f]||0).filter(x=>x>0);
+    const mediaBase=preenchidos.length?preenchidos.reduce((a,b)=>a+b,0)/preenchidos.length:0;
+    const ajuste = saldo * 0.1; // cada ponto de saldo vale 0.1 na média
+    colab.media = Math.max(0, Math.min(5, parseFloat((mediaBase + ajuste).toFixed(1))));
+    saveColaboradores(); renderAvaliacao();
+  }
+
   msg.style.color='var(--acc3)'; msg.textContent='✅ Registrado!';
   setTimeout(()=>{closeModal('modal-ocorrencia');renderOcorrencias();renderAvDash();},1000);
 }
@@ -2782,6 +2813,20 @@ function createMultiSelect(id, options, placeholder, onChange) {
   const dropdown = document.createElement('div');
   dropdown.className = 'ms-dropdown';
   
+  // Select all row
+  const selAllRow = document.createElement('div');
+  selAllRow.className = 'ms-opt';
+  selAllRow.style.borderBottom = '1px solid var(--bor)';
+  selAllRow.style.marginBottom = '4px';
+  selAllRow.style.paddingBottom = '6px';
+  const selAllId = id + '_selall';
+  selAllRow.innerHTML = `<input type="checkbox" id="${selAllId}" class="ms-sel-all"><label for="${selAllId}" style="font-weight:700;color:var(--acc)">✓ Selecionar todas</label>`;
+  selAllRow.querySelector('input').addEventListener('change', (e) => {
+    dropdown.querySelectorAll('input:not(.ms-sel-all)').forEach(i => i.checked = e.target.checked);
+    updateLabel(); onChange();
+  });
+  dropdown.appendChild(selAllRow);
+
   options.forEach(opt => {
     const row = document.createElement('div');
     row.className = 'ms-opt';
@@ -2795,7 +2840,7 @@ function createMultiSelect(id, options, placeholder, onChange) {
   clear.className = 'ms-clear';
   clear.textContent = '✕ Limpar seleção';
   clear.addEventListener('click', () => { 
-    dropdown.querySelectorAll('input').forEach(i => i.checked = false);
+    dropdown.querySelectorAll('input:not(.ms-sel-all)').forEach(i => i.checked = false);
     updateLabel(); onChange();
   });
   dropdown.appendChild(clear);
@@ -2810,15 +2855,19 @@ function createMultiSelect(id, options, placeholder, onChange) {
   document.addEventListener('click', () => { dropdown.classList.remove('open'); btn.classList.remove('open'); });
   
   function updateLabel() {
-    const checked = [...dropdown.querySelectorAll('input:checked')].map(i => i.value);
+    const checked = [...dropdown.querySelectorAll('input:checked:not(.ms-sel-all)')].map(i => i.value);
     const label = btn.querySelector('.ms-label');
     label.textContent = checked.length === 0 ? placeholder : checked.length === 1 ? checked[0] : `${checked.length} selecionados`;
     btn.style.borderColor = checked.length > 0 ? 'var(--acc)' : '';
+    // sync select-all checkbox
+    const allCbs = dropdown.querySelectorAll('input:not(.ms-sel-all)');
+    const selAllCb = dropdown.querySelector('.ms-sel-all');
+    if (selAllCb) selAllCb.checked = allCbs.length > 0 && [...allCbs].every(i=>i.checked);
   }
   
   wrap.appendChild(btn);
   wrap.appendChild(dropdown);
-  wrap._getValues = () => [...dropdown.querySelectorAll('input:checked')].map(i => i.value);
+  wrap._getValues = () => [...dropdown.querySelectorAll('input:checked:not(.ms-sel-all)')].map(i => i.value);
   wrap._clear = () => { dropdown.querySelectorAll('input').forEach(i => i.checked = false); updateLabel(); };
 }
 
@@ -2832,45 +2881,50 @@ function msClear(id) {
   else if (el) el.value = '';
 }
 
-function initMultiSelects() {
-  const statusOpts = getAllStatus().map(s=>({value:s,label:s.length>20?s.slice(0,18)+'…':s}));
-  const tipoOpts = [{value:'Planejado',label:'Planejado'},{value:'Urgente',label:'Urgente'}];
-  const prioOpts = [{value:'Alta',label:'Alta'},{value:'Média',label:'Média'},{value:'Baixa',label:'Baixa'}];
-  const obraOpts = () => OBRAS.map(o => ({value:o,label:o}));
-  const compOpts = () => COMPS.map(c => ({value:c,label:c}));
+function initMultiSelects() { refreshAllMultiSelects(); }
+
+function refreshAllMultiSelects() {
+  const statusOpts = getAllStatus().map(s=>({value:s,label:s.length>22?s.slice(0,20)+'…':s}));
+  const tipoOpts   = [{value:'Planejado',label:'Planejado'},{value:'Urgente',label:'Urgente'}];
+  const prioOpts   = [{value:'Alta',label:'Alta'},{value:'Média',label:'Média'},{value:'Baixa',label:'Baixa'}];
+  const obraOpts   = OBRAS.map(o=>({value:o,label:o}));
+  const compOpts   = COMPS.map(c=>({value:c,label:c}));
 
   // Dashboard
-  createMultiSelect('df-obra-ms',  obraOpts(),  'Todas as obras', renderDash);
-  createMultiSelect('df-comp-ms',  compOpts(),  'Todos',          renderDash);
-  createMultiSelect('df-status-ms',statusOpts,  'Todos status',   renderDash);
-  createMultiSelect('df-tipo-ms',  tipoOpts,    'Todos tipos',    renderDash);
+  createMultiSelect('df-obra-ms',  obraOpts,  'Todas as obras', renderDash);
+  createMultiSelect('df-comp-ms',  compOpts,  'Todos',          renderDash);
+  createMultiSelect('df-status-ms',statusOpts,'Todos status',   renderDash);
+  createMultiSelect('df-tipo-ms',  tipoOpts,  'Todos tipos',    renderDash);
 
   // Requisições
-  createMultiSelect('f-obra-ms',   obraOpts(),  'Todas as obras', renderReq);
-  createMultiSelect('f-comp-ms',   compOpts(),  'Todos',          renderReq);
-  createMultiSelect('f-status-ms', statusOpts,  'Todos status',   renderReq);
-  createMultiSelect('f-tipo-ms',   tipoOpts,    'Todos tipos',    renderReq);
+  createMultiSelect('f-obra-ms',   obraOpts,  'Todas as obras', renderReq);
+  createMultiSelect('f-comp-ms',   compOpts,  'Todos',          renderReq);
+  createMultiSelect('f-status-ms', statusOpts,'Todos status',   renderReq);
+  createMultiSelect('f-tipo-ms',   tipoOpts,  'Todos tipos',    renderReq);
 
   // Análise
-  createMultiSelect('fa-obra-ms',  obraOpts(),  'Todas as obras', renderAnalise);
-  createMultiSelect('fa-comp-ms',  compOpts(),  'Todos',          renderAnalise);
-  createMultiSelect('fa-status-ms',statusOpts,  'Todos status',   renderAnalise);
-  createMultiSelect('fa-tipo-ms',  tipoOpts,    'Todos tipos',    renderAnalise);
-  createMultiSelect('fa-prio-ms',  prioOpts,    'Todas prio.',    renderAnalise);
+  createMultiSelect('fa-obra-ms',  obraOpts,  'Todas as obras', renderAnalise);
+  createMultiSelect('fa-comp-ms',  compOpts,  'Todos',          renderAnalise);
+  createMultiSelect('fa-status-ms',statusOpts,'Todos status',   renderAnalise);
+  createMultiSelect('fa-tipo-ms',  tipoOpts,  'Todos tipos',    renderAnalise);
+  createMultiSelect('fa-prio-ms',  prioOpts,  'Todas prio.',    renderAnalise);
 
   // Compradores
-  createMultiSelect('cp-obra-ms',   obraOpts(),  'Todas as obras', renderComps);
-  createMultiSelect('cp-status-ms', statusOpts,  'Todos status',   renderComps);
-  createMultiSelect('cp-tipo-ms',   tipoOpts,    'Todos tipos',    renderComps);
+  createMultiSelect('cp-obra-ms',   obraOpts, 'Todas as obras', renderComps);
+  createMultiSelect('cp-status-ms', statusOpts,'Todos status',  renderComps);
+  createMultiSelect('cp-tipo-ms',   tipoOpts, 'Todos tipos',    renderComps);
 
   // Contatos
-  createMultiSelect('ct-f-obra-ms', obraOpts(), 'Todas as obras', renderContatos);
+  createMultiSelect('ct-f-obra-ms', obraOpts, 'Todas as obras', renderContatos);
   createMultiSelect('ct-f-status-ms',[
     {value:'Resolvido',label:'Resolvido'},
     {value:'Pendente',label:'Pendente'},
     {value:'Aguardando Retorno',label:'Aguardando Retorno'},
     {value:'Sem Resposta',label:'Sem Resposta'}
   ], 'Todos status', renderContatos);
+
+  // Atualiza selects do modal de atualização
+  populaSelects();
 }
 
 // ── INIT ──────────────────────────────────────────────────────
