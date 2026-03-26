@@ -1689,12 +1689,21 @@ function renderCharts(d, obras) {
             meta.data.forEach((bar, index) => {
               const value = dataset.data[index];
               if (!value) return;
+              const barHeight = bar.base - bar.y;
               ctx.save();
-              ctx.fillStyle = '#2a2218';
-              ctx.font = 'bold 12px sans-serif';
+              ctx.font = 'bold 11px sans-serif';
               ctx.textAlign = 'center';
-              ctx.textBaseline = 'bottom';
-              ctx.fillText(value, bar.x, bar.y - 3);
+              if (barHeight > 20) {
+                // Dentro da barra
+                ctx.fillStyle = '#ffffff';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(value, bar.x, bar.y + barHeight / 2);
+              } else {
+                // Acima da barra
+                ctx.fillStyle = '#dde1ee';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(value, bar.x, bar.y - 2);
+              }
               ctx.restore();
             });
           });
@@ -1832,12 +1841,21 @@ function renderCharts(d, obras) {
             meta.data.forEach((bar, index) => {
               const value = dataset.data[index];
               if (!value) return;
+              const barHeight = bar.base - bar.y;
               ctx.save();
-              ctx.fillStyle = '#2a2218';
-              ctx.font = 'bold 12px sans-serif';
+              ctx.font = 'bold 11px sans-serif';
               ctx.textAlign = 'center';
-              ctx.textBaseline = 'bottom';
-              ctx.fillText(value, bar.x, bar.y - 3);
+              if (barHeight > 20) {
+                // Dentro da barra
+                ctx.fillStyle = '#ffffff';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(value, bar.x, bar.y + barHeight / 2);
+              } else {
+                // Acima da barra
+                ctx.fillStyle = '#dde1ee';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(value, bar.x, bar.y - 2);
+              }
               ctx.restore();
             });
           });
