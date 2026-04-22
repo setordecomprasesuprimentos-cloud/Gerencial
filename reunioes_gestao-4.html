@@ -1,0 +1,2336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Central de Reuniões — Setor de Compras</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1e2333;
+    --border: #272d42;
+    --accent: #f0a500;
+    --accent2: #e05c2a;
+    --accent3: #3ab4f2;
+    --green: #2ecc8a;
+    --red: #e05c5c;
+    --text: #e8eaf0;
+    --muted: #6e758c;
+    --encarregado: #f0a500;
+    --engenheiro: #3ab4f2;
+    --lideranca: #b97af0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+  header h1 span { color: var(--accent); }
+  .header-date {
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--surface2);
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+
+  /* NAV TABS */
+  nav {
+    display: flex;
+    gap: 4px;
+    padding: 14px 28px 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  .tab-btn {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 18px;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    border-bottom: 3px solid transparent;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); background: var(--surface2); }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); background: var(--surface2); }
+  .tab-btn.enc.active { border-bottom-color: var(--encarregado); }
+  .tab-btn.eng.active { border-bottom-color: var(--engenheiro); }
+  .tab-btn.lid.active { border-bottom-color: var(--lideranca); }
+  .tab-btn.age.active { border-bottom-color: var(--green); }
+  .tab-btn.cad.active { border-bottom-color: var(--accent2); }
+
+  /* PAGE SECTIONS */
+  .page { display: none; padding: 28px; max-width: 1200px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* SECTION TITLES */
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .section-sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-left: 10px;
+  }
+  .badge-enc { background: #f0a50022; color: var(--encarregado); border: 1px solid #f0a50055; }
+  .badge-eng { background: #3ab4f222; color: var(--engenheiro); border: 1px solid #3ab4f255; }
+  .badge-lid { background: #b97af022; color: var(--lideranca); border: 1px solid #b97af055; }
+  .badge-age { background: #2ecc8a22; color: var(--green); border: 1px solid #2ecc8a55; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  /* FORM ELEMENTS */
+  .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .form-group { display: flex; flex-direction: column; flex: 1; min-width: 140px; }
+  .form-group label { font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
+  input, select, textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    transition: border-color .2s;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* BUTTONS */
+  .btn {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 9px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-primary { background: var(--accent); color: #0f1117; }
+  .btn-primary:hover { background: #ffc233; }
+  .btn-eng { background: var(--engenheiro); color: #0f1117; }
+  .btn-lid { background: var(--lideranca); color: #0f1117; }
+  .btn-enc { background: var(--encarregado); color: #0f1117; }
+  .btn-green { background: var(--green); color: #0f1117; }
+  .btn-danger { background: #e05c5c22; color: var(--red); border: 1px solid #e05c5c44; }
+  .btn-danger:hover { background: #e05c5c33; }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--border); }
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+  /* ITEMS LIST */
+  .item-list { display: flex; flex-direction: column; gap: 8px; }
+  .item-row {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    animation: slideIn .2s ease;
+  }
+  @keyframes slideIn { from { opacity:0; transform: translateY(-6px); } to { opacity:1; transform: translateY(0); } }
+  .item-main { flex: 1; }
+  .item-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+  .item-meta { font-size: 12px; color: var(--muted); }
+  .item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+  /* ALERT INDICATOR */
+  .alert-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+    margin-right: 6px;
+    animation: pulse 1.5s infinite;
+  }
+  .alert-dot.ok { background: var(--green); animation: none; }
+  @keyframes pulse {
+    0%,100% { opacity:1; } 50% { opacity:.3; }
+  }
+
+  /* URGENCY TAGS */
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    margin-left: 6px;
+  }
+  .tag-alta { background: #e05c5c22; color: var(--red); border: 1px solid #e05c5c44; }
+  .tag-media { background: #f0a50022; color: var(--accent); border: 1px solid #f0a50044; }
+  .tag-baixa { background: #2ecc8a22; color: var(--green); border: 1px solid #2ecc8a44; }
+
+  /* AGENDA CALENDAR */
+  .agenda-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media(max-width: 700px) { .agenda-grid { grid-template-columns: 1fr; } }
+
+  /* STATS ROW */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+
+  /* OBRAS CHIPS */
+  .obra-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    margin: 3px;
+  }
+  .obra-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  /* SEPARATOR */
+  .sep { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* REPASSE SECTION */
+  .repasse-box {
+    background: #2ecc8a11;
+    border: 1px solid #2ecc8a33;
+    border-radius: 10px;
+    padding: 18px;
+    margin-top: 16px;
+  }
+  .repasse-box h4 { font-family: 'Syne', sans-serif; font-size: 13px; color: var(--green); margin-bottom: 12px; }
+
+  /* TABS INSIDE PAGE */
+  .inner-tabs { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+  .inner-tab {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    background: var(--surface2);
+    color: var(--muted);
+    transition: all .15s;
+  }
+  .inner-tab.active { background: var(--accent); color: #0f1117; border-color: var(--accent); }
+
+  /* WEEK SCHEDULE */
+  .week-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .week-day-label {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    padding: 4px;
+  }
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-day {
+    min-height: 68px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+  .cal-day:hover { border-color: var(--accent); }
+  .cal-day.today { border-color: var(--accent); }
+  .cal-day.empty { background: transparent; border-color: transparent; cursor: default; }
+  .cal-day-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+  .cal-day.today .cal-day-num { color: var(--accent); }
+  .cal-event {
+    font-size: 9px;
+    border-radius: 3px;
+    padding: 1px 4px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 600;
+  }
+  .cal-event.meeting { background: #f0a50033; color: var(--accent); }
+  .cal-event.tarefa { background: #3ab4f222; color: var(--engenheiro); }
+  .cal-event.alerta { background: #e05c5c22; color: var(--red); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+  }
+  .empty-state .icon { font-size: 36px; margin-bottom: 10px; }
+  .empty-state p { font-size: 13px; }
+
+  /* REUNIAO PAGE specific */
+  .reuniao-header {
+    border-left: 4px solid var(--encarregado);
+    padding-left: 14px;
+    margin-bottom: 24px;
+  }
+  .reuniao-header.eng { border-color: var(--engenheiro); }
+  .reuniao-header.lid { border-color: var(--lideranca); }
+
+  .modal-overlay {
+    display: none;
+    position: fixed; inset:0;
+    background: rgba(0,0,0,.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    width: 95%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+  }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; margin-bottom: 20px; }
+  .modal-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: var(--surface2);
+    border: none;
+    color: var(--muted);
+    border-radius: 50%;
+    width: 30px; height: 30px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal-close:hover { color: var(--text); }
+
+  select option { background: #1e2333; }
+
+  .divider-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 16px 0;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .divider-label::before, .divider-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .notification {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 999;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all .3s cubic-bezier(.34,1.56,.64,1);
+    pointer-events: none;
+  }
+  .notification.show { transform: translateY(0); opacity: 1; }
+  .notification-icon { font-size: 18px; }
+  .notification-text { font-size: 13px; font-weight: 500; }
+
+  .scrollable { max-height: 320px; overflow-y: auto; padding-right: 4px; }
+  .scrollable::-webkit-scrollbar { width: 4px; }
+  .scrollable::-webkit-scrollbar-track { background: transparent; }
+  .scrollable::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .chip-group { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+
+  .print-btn {
+    font-size: 11px;
+    padding: 5px 12px;
+  }
+
+  .tag-finalizada {
+    background: #2ecc8a22; color: var(--green);
+    border: 1px solid #2ecc8a55;
+    font-size: 10px; font-weight: 700;
+    padding: 2px 9px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: .5px;
+    margin-left: 8px;
+  }
+  .tag-pendente {
+    background: #f0a50011; color: var(--accent);
+    border: 1px solid #f0a50033;
+    font-size: 10px; font-weight: 700;
+    padding: 2px 9px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: .5px;
+    margin-left: 8px;
+  }
+  .item-row.finalizada { border-color: #2ecc8a33; background: #2ecc8a08; }
+  .btn-edit { background: #3ab4f222; color: var(--engenheiro); border: 1px solid #3ab4f244; }
+  .btn-edit:hover { background: #3ab4f233; }
+  .btn-finalizar { background: #2ecc8a22; color: var(--green); border: 1px solid #2ecc8a44; }
+  .btn-finalizar:hover { background: #2ecc8a33; }
+
+  @media print {
+    header, nav, .btn, .modal-overlay, .notification { display: none !important; }
+    .page { display: block !important; }
+    body { background: white; color: black; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Central de <span>Reuniões</span> · Compras</h1>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <div class="header-date" id="headerDate"></div>
+    <button class="btn btn-sm btn-ghost" onclick="exportarJSON()" title="Backup completo em JSON">⬇️ JSON</button>
+    <button class="btn btn-sm btn-ghost" onclick="exportarExcel()" title="Exportar tudo em Excel">📊 Excel</button>
+    <label class="btn btn-sm btn-ghost" title="Importar backup JSON" style="cursor:pointer;margin:0">
+      ⬆️ Importar
+      <input type="file" accept=".json" onchange="importarJSON(event)" style="display:none">
+    </label>
+  </div>
+</header>
+
+<nav>
+  <button class="tab-btn enc active" onclick="showTab('enc')">🏗️ Encarregados</button>
+  <button class="tab-btn eng" onclick="showTab('eng')">🔧 Engenheiros</button>
+  <button class="tab-btn lid" onclick="showTab('lid')">👔 Liderança</button>
+  <button class="tab-btn age" onclick="showTab('age')">📅 Agenda</button>
+  <button class="tab-btn cad" onclick="showTab('cad')">⚙️ Cadastros</button>
+</nav>
+
+<!-- ===================== ENCARREGADOS ===================== -->
+<div id="page-enc" class="page active">
+  <div class="reuniao-header">
+    <div class="section-title">Reunião com Encarregados <span class="badge badge-enc">Semanal</span></div>
+    <div class="section-sub">Registro de pautas, decisões e datas importantes extraídas da reunião</div>
+  </div>
+
+  <div class="stats-row" id="stats-enc"></div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📝 Nova Ata de Reunião</div>
+      <button class="btn btn-sm btn-ghost print-btn" onclick="window.print()">🖨️ Imprimir</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data da Reunião</label>
+        <input type="date" id="enc-data">
+      </div>
+      <div class="form-group">
+        <label>Obra(s) Discutida(s)</label>
+        <select id="enc-obra" multiple style="height:80px">
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Participante(s) / Encarregado(s)</label>
+        <input type="text" id="enc-participantes" placeholder="Nome dos presentes">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="flex:2">
+        <label>Pauta / Discussões</label>
+        <textarea id="enc-pauta" placeholder="O que foi discutido na reunião..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Decisões / Encaminhamentos</label>
+        <textarea id="enc-decisoes" placeholder="Decisões tomadas, ações definidas..."></textarea>
+      </div>
+    </div>
+
+    <div class="divider-label">📌 Datas Importantes para Compradores</div>
+    <div id="enc-datas-container">
+      <div class="item-row" id="enc-data-row-0">
+        <div class="form-row" style="flex:1;margin:0">
+          <div class="form-group">
+            <label>Data Limite</label>
+            <input type="date" class="enc-d-data">
+          </div>
+          <div class="form-group" style="flex:2">
+            <label>Descrição / Material Necessário</label>
+            <input type="text" class="enc-d-desc" placeholder="Ex: Entregar cimento para fundação...">
+          </div>
+          <div class="form-group">
+            <label>Obra</label>
+            <select class="enc-d-obra"></select>
+          </div>
+          <div class="form-group">
+            <label>Comprador Responsável</label>
+            <select class="enc-d-comprador"></select>
+          </div>
+          <div class="form-group">
+            <label>Urgência</label>
+            <select class="enc-d-urgencia">
+              <option value="alta">🔴 Alta</option>
+              <option value="media" selected>🟡 Média</option>
+              <option value="baixa">🟢 Baixa</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="addDataRow('enc')">+ Adicionar data</button>
+
+    <hr class="sep">
+    <button class="btn btn-enc" onclick="salvarReuniao('enc')">💾 Salvar Ata</button>
+  </div>
+
+  <div class="divider-label">Atas Registradas</div>
+  <div class="scrollable">
+    <div class="item-list" id="list-enc">
+      <div class="empty-state"><div class="icon">📋</div><p>Nenhuma ata registrada ainda.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== ENGENHEIROS ===================== -->
+<div id="page-eng" class="page">
+  <div class="reuniao-header eng">
+    <div class="section-title">Reunião com Engenheiros <span class="badge badge-eng">Semanal</span></div>
+    <div class="section-sub">Pautas técnicas, cronogramas e requisições de materiais</div>
+  </div>
+
+  <div class="stats-row" id="stats-eng"></div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📝 Nova Ata de Reunião</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data da Reunião</label>
+        <input type="date" id="eng-data">
+      </div>
+      <div class="form-group">
+        <label>Obra(s) Discutida(s)</label>
+        <select id="eng-obra" multiple style="height:80px"></select>
+      </div>
+      <div class="form-group">
+        <label>Engenheiro(s) Presentes</label>
+        <select id="eng-participantes" multiple style="height:80px"></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="flex:2">
+        <label>Pauta Técnica</label>
+        <textarea id="eng-pauta" placeholder="Cronograma, problemas técnicos, aprovações..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Requisições de Material</label>
+        <textarea id="eng-decisoes" placeholder="Materiais solicitados, especificações..."></textarea>
+      </div>
+    </div>
+    <div class="divider-label">📌 Datas Importantes para Compradores</div>
+    <div id="eng-datas-container">
+      <div class="item-row" id="eng-data-row-0">
+        <div class="form-row" style="flex:1;margin:0">
+          <div class="form-group">
+            <label>Data Limite</label>
+            <input type="date" class="eng-d-data">
+          </div>
+          <div class="form-group" style="flex:2">
+            <label>Descrição / Material</label>
+            <input type="text" class="eng-d-desc" placeholder="Materiais necessários...">
+          </div>
+          <div class="form-group">
+            <label>Obra</label>
+            <select class="eng-d-obra"></select>
+          </div>
+          <div class="form-group">
+            <label>Comprador</label>
+            <select class="eng-d-comprador"></select>
+          </div>
+          <div class="form-group">
+            <label>Urgência</label>
+            <select class="eng-d-urgencia">
+              <option value="alta">🔴 Alta</option>
+              <option value="media" selected>🟡 Média</option>
+              <option value="baixa">🟢 Baixa</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="addDataRow('eng')">+ Adicionar data</button>
+    <hr class="sep">
+    <button class="btn btn-eng" onclick="salvarReuniao('eng')">💾 Salvar Ata</button>
+  </div>
+
+  <div class="divider-label">Atas Registradas</div>
+  <div class="scrollable">
+    <div class="item-list" id="list-eng">
+      <div class="empty-state"><div class="icon">📋</div><p>Nenhuma ata registrada ainda.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== LIDERANÇA ===================== -->
+<div id="page-lid" class="page">
+  <div class="reuniao-header lid">
+    <div class="section-title">Reunião com Liderança <span class="badge badge-lid">Semanal</span></div>
+    <div class="section-sub">Estratégia, aprovações e diretrizes da empresa</div>
+  </div>
+
+  <div class="stats-row" id="stats-lid"></div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📝 Nova Ata de Reunião</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data da Reunião</label>
+        <input type="date" id="lid-data">
+      </div>
+      <div class="form-group">
+        <label>Obra(s) em Pauta</label>
+        <select id="lid-obra" multiple style="height:80px"></select>
+      </div>
+      <div class="form-group">
+        <label>Participantes</label>
+        <input type="text" id="lid-participantes" placeholder="Líderes presentes">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="flex:2">
+        <label>Pauta Estratégica</label>
+        <textarea id="lid-pauta" placeholder="Decisões estratégicas, aprovações de orçamento..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Diretrizes / Encaminhamentos</label>
+        <textarea id="lid-decisoes" placeholder="O que foi definido para o setor de compras..."></textarea>
+      </div>
+    </div>
+    <div class="divider-label">📌 Datas Importantes para Compradores</div>
+    <div id="lid-datas-container">
+      <div class="item-row" id="lid-data-row-0">
+        <div class="form-row" style="flex:1;margin:0">
+          <div class="form-group">
+            <label>Data Limite</label>
+            <input type="date" class="lid-d-data">
+          </div>
+          <div class="form-group" style="flex:2">
+            <label>Descrição</label>
+            <input type="text" class="lid-d-desc" placeholder="Prazo ou entrega definida...">
+          </div>
+          <div class="form-group">
+            <label>Obra</label>
+            <select class="lid-d-obra"></select>
+          </div>
+          <div class="form-group">
+            <label>Comprador</label>
+            <select class="lid-d-comprador"></select>
+          </div>
+          <div class="form-group">
+            <label>Urgência</label>
+            <select class="lid-d-urgencia">
+              <option value="alta">🔴 Alta</option>
+              <option value="media" selected>🟡 Média</option>
+              <option value="baixa">🟢 Baixa</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="addDataRow('lid')">+ Adicionar data</button>
+    <hr class="sep">
+    <button class="btn btn-lid" onclick="salvarReuniao('lid')">💾 Salvar Ata</button>
+  </div>
+
+  <div class="divider-label">Atas Registradas</div>
+  <div class="scrollable">
+    <div class="item-list" id="list-lid">
+      <div class="empty-state"><div class="icon">📋</div><p>Nenhuma ata registrada ainda.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== AGENDA ===================== -->
+<div id="page-age" class="page">
+  <div class="section-title">Agenda <span class="badge badge-age">Alertas Ativos</span></div>
+  <div class="section-sub">Afazeres diários com datas, alertas e datas extraídas de reuniões</div>
+
+  <div class="agenda-grid">
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">➕ Nova Tarefa / Afazer</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Data</label>
+            <input type="date" id="age-data">
+          </div>
+          <div class="form-group">
+            <label>Hora (alerta)</label>
+            <input type="time" id="age-hora">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:10px">
+          <label>Descrição da Tarefa</label>
+          <input type="text" id="age-desc" placeholder="O que precisa ser feito...">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo</label>
+            <select id="age-tipo">
+              <option value="tarefa">📋 Tarefa</option>
+              <option value="alerta">🚨 Alerta</option>
+              <option value="reuniao">🤝 Reunião</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Prioridade</label>
+            <select id="age-prioridade">
+              <option value="alta">🔴 Alta</option>
+              <option value="media" selected>🟡 Média</option>
+              <option value="baixa">🟢 Baixa</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Obra Relacionada (opcional)</label>
+            <select id="age-obra">
+              <option value="">— Nenhuma —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Comprador Envolvido (opcional)</label>
+            <select id="age-comprador">
+              <option value="">— Nenhum —</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-green" onclick="salvarAgenda()" style="width:100%">✅ Adicionar à Agenda</button>
+      </div>
+
+      <!-- DATAS DE REUNIÕES PENDENTES -->
+      <div class="card" style="margin-top:0">
+        <div class="card-title" style="margin-bottom:12px">📌 Datas das Reuniões (Pendentes)</div>
+        <div class="scrollable" id="repasse-list">
+          <div class="empty-state"><div class="icon">📭</div><p>Nenhuma data de reunião pendente.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title" id="cal-month-title">Calendário</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm" onclick="changeMonth(-1)">‹</button>
+            <button class="btn btn-ghost btn-sm" onclick="changeMonth(1)">›</button>
+          </div>
+        </div>
+        <div class="week-header">
+          <div class="week-day-label">Dom</div><div class="week-day-label">Seg</div>
+          <div class="week-day-label">Ter</div><div class="week-day-label">Qua</div>
+          <div class="week-day-label">Qui</div><div class="week-day-label">Sex</div>
+          <div class="week-day-label">Sáb</div>
+        </div>
+        <div class="calendar-grid" id="calendar-grid"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px">📋 Tarefas da Agenda</div>
+        <div class="scrollable">
+          <div class="item-list" id="list-age">
+            <div class="empty-state"><div class="icon">✅</div><p>Nenhuma tarefa adicionada.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== CADASTROS ===================== -->
+<div id="page-cad" class="page">
+  <div class="section-title">⚙️ Cadastros</div>
+  <div class="section-sub">Gerencie obras, compradores e engenheiros</div>
+
+  <div class="inner-tabs">
+    <button class="inner-tab active" onclick="showInnerTab('cad-obras')">🏗️ Obras</button>
+    <button class="inner-tab" onclick="showInnerTab('cad-compradores')">🛒 Compradores</button>
+    <button class="inner-tab" onclick="showInnerTab('cad-engenheiros')">🔧 Engenheiros</button>
+    <button class="inner-tab" onclick="showInnerTab('cad-encarregados')">👷 Encarregados</button>
+  </div>
+
+  <!-- OBRAS -->
+  <div id="cad-obras" class="inner-section">
+    <div class="stats-row" id="stats-obras"></div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px">➕ Cadastrar Obra</div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label>Nome da Obra</label>
+          <input type="text" id="obra-nome" placeholder="Ex: Escola Municipal Benvinda">
+        </div>
+        <div class="form-group">
+          <label>Município</label>
+          <input type="text" id="obra-cidade" placeholder="Ex: Ipatinga">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="obra-status">
+            <option value="Em andamento">Em andamento</option>
+            <option value="Aguardando início">Aguardando início</option>
+            <option value="Paralisada">Paralisada</option>
+            <option value="Concluída">Concluída</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Comprador Responsável</label>
+          <select id="obra-comprador">
+            <option value="">— Selecione —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Engenheiro Responsável</label>
+          <select id="obra-engenheiro">
+            <option value="">— Selecione —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Cor Identificadora</label>
+          <input type="color" id="obra-cor" value="#f0a500" style="height:40px;padding:4px">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="salvarObra()">✅ Cadastrar Obra</button>
+    </div>
+    <div class="item-list" id="list-obras">
+      <div class="empty-state"><div class="icon">🏗️</div><p>Nenhuma obra cadastrada.</p></div>
+    </div>
+  </div>
+
+  <!-- COMPRADORES -->
+  <div id="cad-compradores" class="inner-section" style="display:none">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px">➕ Cadastrar Comprador</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome Completo</label>
+          <input type="text" id="comp-nome" placeholder="Nome do comprador">
+        </div>
+        <div class="form-group">
+          <label>Telefone / WhatsApp</label>
+          <input type="text" id="comp-tel" placeholder="(31) 99999-0000">
+        </div>
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" id="comp-email" placeholder="email@empresa.com">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Especialidade / Foco</label>
+        <input type="text" id="comp-esp" placeholder="Ex: Materiais de construção, EPIs...">
+      </div>
+      <button class="btn btn-primary" onclick="salvarComprador()">✅ Cadastrar Comprador</button>
+    </div>
+    <div class="item-list" id="list-compradores">
+      <div class="empty-state"><div class="icon">🛒</div><p>Nenhum comprador cadastrado.</p></div>
+    </div>
+  </div>
+
+  <!-- ENGENHEIROS -->
+  <div id="cad-engenheiros" class="inner-section" style="display:none">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px">➕ Cadastrar Engenheiro</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome Completo</label>
+          <input type="text" id="eng-nome" placeholder="Nome do engenheiro">
+        </div>
+        <div class="form-group">
+          <label>CREA</label>
+          <input type="text" id="eng-crea" placeholder="CREA-MG 000000">
+        </div>
+        <div class="form-group">
+          <label>Especialidade</label>
+          <input type="text" id="eng-esp" placeholder="Ex: Civil, Estrutural...">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Telefone</label>
+          <input type="text" id="eng-tel" placeholder="(31) 99999-0000">
+        </div>
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" id="eng-email" placeholder="email@empresa.com">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="salvarEngenheiro()">✅ Cadastrar Engenheiro</button>
+    </div>
+    <div class="item-list" id="list-engenheiros">
+      <div class="empty-state"><div class="icon">🔧</div><p>Nenhum engenheiro cadastrado.</p></div>
+    </div>
+  </div>
+
+  <!-- ENCARREGADOS -->
+  <div id="cad-encarregados" class="inner-section" style="display:none">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px">➕ Cadastrar Encarregado</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome Completo</label>
+          <input type="text" id="enc-nome-cad" placeholder="Nome do encarregado">
+        </div>
+        <div class="form-group">
+          <label>Telefone / WhatsApp</label>
+          <input type="text" id="enc-tel-cad" placeholder="(31) 99999-0000">
+        </div>
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" id="enc-email-cad" placeholder="email@empresa.com">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Função / Especialidade</label>
+          <input type="text" id="enc-func-cad" placeholder="Ex: Encarregado de Alvenaria, Mestre de Obras...">
+        </div>
+        <div class="form-group">
+          <label>Obra Vinculada</label>
+          <select id="enc-obra-cad">
+            <option value="">— Nenhuma —</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-enc" onclick="salvarEncarregado()">✅ Cadastrar Encarregado</button>
+    </div>
+    <div class="item-list" id="list-encarregados">
+      <div class="empty-state"><div class="icon">👷</div><p>Nenhum encarregado cadastrado.</p></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL EDITAR ENCARREGADO -->
+<div class="modal-overlay" id="modal-edit-enc-cad">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-edit-enc-cad')">✕</button>
+    <div class="modal-title">✏️ Editar Encarregado</div>
+    <input type="hidden" id="edit-enc-cad-id">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nome Completo</label>
+        <input type="text" id="edit-enc-cad-nome">
+      </div>
+      <div class="form-group">
+        <label>Telefone</label>
+        <input type="text" id="edit-enc-cad-tel">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="edit-enc-cad-email">
+      </div>
+      <div class="form-group">
+        <label>Função / Especialidade</label>
+        <input type="text" id="edit-enc-cad-func">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Obra Vinculada</label>
+      <select id="edit-enc-cad-obra"></select>
+    </div>
+    <button class="btn btn-enc" style="width:100%" onclick="salvarEdicaoEncarregado()">💾 Salvar Alterações</button>
+  </div>
+</div>
+
+<!-- MODAL EDITAR OBRA -->
+<div class="modal-overlay" id="modal-edit-obra">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-edit-obra')">✕</button>
+    <div class="modal-title">✏️ Editar Obra</div>
+    <input type="hidden" id="edit-obra-id">
+    <div class="form-row">
+      <div class="form-group" style="flex:2">
+        <label>Nome da Obra</label>
+        <input type="text" id="edit-obra-nome">
+      </div>
+      <div class="form-group">
+        <label>Município</label>
+        <input type="text" id="edit-obra-cidade">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Status</label>
+        <select id="edit-obra-status">
+          <option value="Em andamento">Em andamento</option>
+          <option value="Aguardando início">Aguardando início</option>
+          <option value="Paralisada">Paralisada</option>
+          <option value="Concluída">Concluída</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Comprador Responsável</label>
+        <select id="edit-obra-comprador"></select>
+      </div>
+      <div class="form-group">
+        <label>Engenheiro Responsável</label>
+        <select id="edit-obra-engenheiro"></select>
+      </div>
+      <div class="form-group">
+        <label>Cor</label>
+        <input type="color" id="edit-obra-cor" style="height:40px;padding:4px">
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="salvarEdicaoObra()">💾 Salvar Alterações</button>
+  </div>
+</div>
+
+<!-- MODAL EDITAR COMPRADOR -->
+<div class="modal-overlay" id="modal-edit-comp">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-edit-comp')">✕</button>
+    <div class="modal-title">✏️ Editar Comprador</div>
+    <input type="hidden" id="edit-comp-id">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nome Completo</label>
+        <input type="text" id="edit-comp-nome">
+      </div>
+      <div class="form-group">
+        <label>Telefone / WhatsApp</label>
+        <input type="text" id="edit-comp-tel">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="edit-comp-email">
+      </div>
+      <div class="form-group">
+        <label>Especialidade</label>
+        <input type="text" id="edit-comp-esp">
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="salvarEdicaoComprador()">💾 Salvar Alterações</button>
+  </div>
+</div>
+
+<!-- MODAL EDITAR ENGENHEIRO -->
+<div class="modal-overlay" id="modal-edit-eng">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-edit-eng')">✕</button>
+    <div class="modal-title">✏️ Editar Engenheiro</div>
+    <input type="hidden" id="edit-eng-id">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nome Completo</label>
+        <input type="text" id="edit-eng-nome">
+      </div>
+      <div class="form-group">
+        <label>CREA</label>
+        <input type="text" id="edit-eng-crea">
+      </div>
+      <div class="form-group">
+        <label>Especialidade</label>
+        <input type="text" id="edit-eng-esp">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Telefone</label>
+        <input type="text" id="edit-eng-tel">
+      </div>
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="edit-eng-email">
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="salvarEdicaoEngenheiro()">💾 Salvar Alterações</button>
+  </div>
+</div>
+
+<!-- MODAL EDITAR ATA -->
+<div class="modal-overlay" id="modal-edit-ata">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-edit-ata')">✕</button>
+    <div class="modal-title">✏️ Editar Ata</div>
+    <input type="hidden" id="edit-ata-id">
+    <input type="hidden" id="edit-ata-tipo">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data da Reunião</label>
+        <input type="date" id="edit-ata-data">
+      </div>
+      <div class="form-group">
+        <label>Participantes</label>
+        <input type="text" id="edit-ata-participantes">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Pauta / Discussões</label>
+      <textarea id="edit-ata-pauta"></textarea>
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Decisões / Encaminhamentos</label>
+      <textarea id="edit-ata-decisoes"></textarea>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="salvarEdicaoAta()">💾 Salvar Alterações</button>
+  </div>
+</div>
+
+<!-- MODAL VER ATA -->
+<div class="modal-overlay" id="modal-ata">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-ata')">✕</button>
+    <div class="modal-title" id="modal-ata-title">Ata de Reunião</div>
+    <div id="modal-ata-content"></div>
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notification" id="notification">
+  <span class="notification-icon" id="notif-icon">✅</span>
+  <span class="notification-text" id="notif-text">Salvo com sucesso!</span>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// STATE & STORAGE
+// ═══════════════════════════════════════════
+const STATE_KEY = 'reunioes_gestao_v1';
+let state = {
+  obras: [],
+  compradores: [],
+  engenheiros: [],
+  encarregados: [],
+  reunioes: { enc: [], eng: [], lid: [] },
+  agenda: [],
+};
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STATE_KEY);
+    if (saved) state = JSON.parse(saved);
+  } catch(e) {}
+}
+function saveState() {
+  localStorage.setItem(STATE_KEY, JSON.stringify(state));
+}
+
+// ═══════════════════════════════════════════
+// NOTIFICATION
+// ═══════════════════════════════════════════
+function notify(text, icon='✅') {
+  const n = document.getElementById('notification');
+  document.getElementById('notif-icon').textContent = icon;
+  document.getElementById('notif-text').textContent = text;
+  n.classList.add('show');
+  setTimeout(() => n.classList.remove('show'), 2800);
+}
+
+// ═══════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════
+function showTab(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelector('.tab-btn.' + id)?.classList.add('active');
+  // if no specific class, use index
+  const tabs = document.querySelectorAll('.tab-btn');
+  tabs.forEach(t => { if(t.getAttribute('onclick').includes(`'${id}'`)) t.classList.add('active'); });
+  if(id === 'age') renderCalendar();
+  if(id === 'age') renderAgenda();
+  if(id === 'age') renderRepasse();
+}
+
+function showInnerTab(id) {
+  document.querySelectorAll('.inner-section').forEach(s => s.style.display = 'none');
+  document.querySelectorAll('.inner-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).style.display = 'block';
+  event.target.classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+// HEADER DATE
+// ═══════════════════════════════════════════
+function updateHeaderDate() {
+  const now = new Date();
+  const opts = { weekday:'long', day:'2-digit', month:'long', year:'numeric' };
+  document.getElementById('headerDate').textContent = now.toLocaleDateString('pt-BR', opts);
+}
+
+// ═══════════════════════════════════════════
+// POPULATE SELECTS
+// ═══════════════════════════════════════════
+function populateSelects() {
+  const obras = state.obras;
+  const compradores = state.compradores;
+  const engenheiros = state.engenheiros;
+
+  // Obra selects (multi)
+  ['enc-obra','eng-obra','lid-obra'].forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    const vals = Array.from(el.selectedOptions).map(o=>o.value);
+    el.innerHTML = obras.map(o => `<option value="${o.id}" ${vals.includes(o.id)?'selected':''}>${o.nome}</option>`).join('');
+  });
+
+  // Comprador selects
+  const compOpts = `<option value="">— Nenhum —</option>` + compradores.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  const obraOpts2 = `<option value="">— Nenhuma —</option>` + obras.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
+  document.querySelectorAll('.enc-d-obra, .eng-d-obra, .lid-d-obra').forEach(el => {
+    const v = el.value;
+    el.innerHTML = obraOpts2;
+    el.value = v;
+  });
+  document.querySelectorAll('.enc-d-comprador, .eng-d-comprador, .lid-d-comprador').forEach(el => {
+    const v = el.value;
+    el.innerHTML = compOpts;
+    el.value = v;
+  });
+  // Encarregado obra select (cadastro)
+  const encObraEl = document.getElementById('enc-obra-cad');
+  if(encObraEl) {
+    encObraEl.innerHTML = `<option value="">— Nenhuma —</option>` + obras.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
+  }
+
+  // Agenda obra select
+  const agObra = document.getElementById('age-obra');
+  if(agObra) {
+    const v = agObra.value;
+    agObra.innerHTML = `<option value="">— Nenhuma —</option>` + obras.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
+    agObra.value = v;
+  }
+  const agComp = document.getElementById('age-comprador');
+  if(agComp) { agComp.innerHTML = compOpts; }
+  const obraComp = document.getElementById('obra-comprador');
+  if(obraComp) { obraComp.innerHTML = compOpts; }
+
+  // Eng selects
+  const engOpts = `<option value="">— Nenhum —</option>` + engenheiros.map(e=>`<option value="${e.id}">${e.nome}</option>`).join('');
+  const engPart = document.getElementById('eng-participantes');
+  if(engPart) { engPart.innerHTML = engenheiros.map(e=>`<option value="${e.id}">${e.nome}</option>`).join(''); }
+  const obraEng = document.getElementById('obra-engenheiro');
+  if(obraEng) { obraEng.innerHTML = engOpts; }
+}
+
+// ═══════════════════════════════════════════
+// DATAS ROWS (múltiplas datas por reunião)
+// ═══════════════════════════════════════════
+let dataRowCount = { enc:1, eng:1, lid:1 };
+
+function addDataRow(tipo) {
+  const container = document.getElementById(`${tipo}-datas-container`);
+  const idx = dataRowCount[tipo]++;
+  const compOpts = `<option value="">— Nenhum —</option>` + state.compradores.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  const row = document.createElement('div');
+  row.className = 'item-row';
+  row.style.marginTop = '8px';
+  row.id = `${tipo}-data-row-${idx}`;
+  row.innerHTML = `
+    <div class="form-row" style="flex:1;margin:0">
+      <div class="form-group"><label>Data Limite</label><input type="date" class="${tipo}-d-data"></div>
+      <div class="form-group" style="flex:2"><label>Descrição</label><input type="text" class="${tipo}-d-desc" placeholder="Material ou entrega necessária..."></div>
+      <div class="form-group"><label>Comprador</label><select class="${tipo}-d-comprador">${compOpts}</select></div>
+      <div class="form-group"><label>Urgência</label>
+        <select class="${tipo}-d-urgencia">
+          <option value="alta">🔴 Alta</option>
+          <option value="media" selected>🟡 Média</option>
+          <option value="baixa">🟢 Baixa</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-danger btn-sm" style="align-self:flex-end" onclick="this.parentElement.remove()">✕</button>
+  `;
+  container.appendChild(row);
+}
+
+function collectDataRows(tipo) {
+  const container = document.getElementById(`${tipo}-datas-container`);
+  const rows = [];
+  container.querySelectorAll('.item-row').forEach(row => {
+    const data = row.querySelector(`.${tipo}-d-data`)?.value;
+    const desc = row.querySelector(`.${tipo}-d-desc`)?.value;
+    const obra = row.querySelector(`.${tipo}-d-obra`)?.value;
+    const comprador = row.querySelector(`.${tipo}-d-comprador`)?.value;
+    const urgencia = row.querySelector(`.${tipo}-d-urgencia`)?.value;
+    if(desc) rows.push({ data, desc, obra, comprador, urgencia });
+  });
+  return rows;
+}
+
+// ═══════════════════════════════════════════
+// SALVAR REUNIÃO
+// ═══════════════════════════════════════════
+function salvarReuniao(tipo) {
+  const data = document.getElementById(`${tipo}-data`).value;
+  const pauta = document.getElementById(`${tipo}-pauta`).value;
+  const decisoes = document.getElementById(`${tipo}-decisoes`).value;
+  const datasImportantes = collectDataRows(tipo);
+
+  const obraEl = document.getElementById(`${tipo}-obra`);
+  const obras = obraEl ? Array.from(obraEl.selectedOptions).map(o=>({ id:o.value, nome:o.text })) : [];
+
+  let participantes = '';
+  const partEl = document.getElementById(`${tipo}-participantes`);
+  if(partEl) {
+    if(partEl.tagName === 'SELECT') {
+      participantes = Array.from(partEl.selectedOptions).map(o=>o.text).join(', ');
+    } else {
+      participantes = partEl.value;
+    }
+  }
+
+  if(!data || !pauta) { notify('Preencha data e pauta!', '⚠️'); return; }
+
+  const reuniao = {
+    id: Date.now().toString(),
+    data, pauta, decisoes, obras, participantes,
+    datasImportantes,
+    tipo
+  };
+  state.reunioes[tipo].unshift(reuniao);
+
+  // ── Enviar datas importantes direto para a Agenda ──
+  const tipoNome = { enc:'Encarregados', eng:'Engenheiros', lid:'Liderança' }[tipo];
+  let adicionadas = 0;
+  datasImportantes.forEach(d => {
+    if(!d.desc) return;
+    const jaExiste = state.agenda.some(t => t.desc === d.desc && t.data === d.data && t.origemReuniao);
+    if(jaExiste) return;
+    state.agenda.unshift({
+      id: Date.now().toString() + Math.random(),
+      data: d.data || '',
+      hora: '',
+      desc: d.desc,
+      tipo: 'alerta',
+      prioridade: d.urgencia || 'media',
+      comprador: d.comprador || '',
+      obra: d.obra || obras[0]?.id || '',
+      origemReuniao: tipoNome,
+      finalizada: false,
+    });
+    adicionadas++;
+  });
+
+  saveState();
+  renderReuniao(tipo);
+  renderRepasse();
+  renderAgenda();
+  renderCalendar();
+  if(adicionadas > 0) {
+    notify(`Ata salva! ${adicionadas} data(s) enviada(s) à Agenda 📅`, '✅');
+  } else {
+    notify('Ata salva com sucesso!', '✅');
+  }
+
+  // Reset form
+  document.getElementById(`${tipo}-data`).value = '';
+  document.getElementById(`${tipo}-pauta`).value = '';
+  document.getElementById(`${tipo}-decisoes`).value = '';
+  document.getElementById(`${tipo}-datas-container`).innerHTML = `
+    <div class="item-row" id="${tipo}-data-row-0">
+      <div class="form-row" style="flex:1;margin:0">
+        <div class="form-group"><label>Data Limite</label><input type="date" class="${tipo}-d-data"></div>
+        <div class="form-group" style="flex:2"><label>Descrição / Material Necessário</label><input type="text" class="${tipo}-d-desc" placeholder="Ex: Entregar cimento para fundação..."></div>
+        <div class="form-group"><label>Obra</label><select class="${tipo}-d-obra"></select></div>
+        <div class="form-group"><label>Comprador Responsável</label><select class="${tipo}-d-comprador"></select></div>
+        <div class="form-group"><label>Urgência</label>
+          <select class="${tipo}-d-urgencia">
+            <option value="alta">🔴 Alta</option>
+            <option value="media" selected>🟡 Média</option>
+            <option value="baixa">🟢 Baixa</option>
+          </select>
+        </div>
+      </div>
+    </div>`;
+  dataRowCount[tipo] = 1;
+  populateSelects();
+}
+
+// ═══════════════════════════════════════════
+// RENDER REUNIÃO LIST
+// ═══════════════════════════════════════════
+const tipoLabel = { enc:'Encarregados', eng:'Engenheiros', lid:'Liderança' };
+const tipoColor = { enc:'var(--encarregado)', eng:'var(--engenheiro)', lid:'var(--lideranca)' };
+
+function renderReuniao(tipo) {
+  const list = document.getElementById(`list-${tipo}`);
+  const data = state.reunioes[tipo];
+  if(!data.length) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>Nenhuma ata registrada ainda.</p></div>`;
+    renderStats(tipo);
+    return;
+  }
+  list.innerHTML = data.map(r => {
+    const obrasStr = r.obras?.map(o=>`<span class="obra-chip"><span class="obra-dot" style="background:var(--accent)"></span>${o.nome}</span>`).join('') || '';
+    const datas = r.datasImportantes || [];
+    const datasStr = datas.length ? `<div style="margin-top:6px">${datas.map(d => {
+      const obraD = state.obras.find(o=>o.id===d.obra);
+      return `<span class="tag tag-${d.urgencia}" style="margin-right:4px">📅 ${d.data ? formatDate(d.data) : '?'} — ${d.desc}${obraD ? ' · 🏗️ '+obraD.nome : ''}</span>`;
+    }).join('')}</div>` : '';
+    const finTag = r.finalizada
+      ? `<span class="tag-finalizada">✅ Finalizada</span>`
+      : `<span class="tag-pendente">⏳ Pendente</span>`;
+    return `
+    <div class="item-row${r.finalizada?' finalizada':''}">
+      <div class="item-main">
+        <div class="item-title">📋 Reunião — ${formatDate(r.data)} ${finTag} ${datas.length?`<span class="tag tag-${datas[0]?.urgencia||'media'}">${datas.length} data(s)</span>`:''}</div>
+        <div class="item-meta" style="margin-bottom:4px">${r.participantes || '—'}</div>
+        <div class="chip-group">${obrasStr}</div>
+        ${datasStr}
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-ghost btn-sm" onclick="verAta('${tipo}','${r.id}')">👁️ Ver</button>
+        <button class="btn btn-edit btn-sm" onclick="editarAta('${tipo}','${r.id}')">✏️</button>
+        ${!r.finalizada
+          ? `<button class="btn btn-finalizar btn-sm" onclick="finalizarAta('${tipo}','${r.id}')">✅ Finalizar</button>`
+          : `<button class="btn btn-ghost btn-sm" onclick="reabrirAta('${tipo}','${r.id}')">🔓</button>`}
+        <button class="btn btn-danger btn-sm" onclick="excluirReuniao('${tipo}','${r.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+  renderStats(tipo);
+}
+
+function renderStats(tipo) {
+  const el = document.getElementById(`stats-${tipo}`);
+  if(!el) return;
+  const data = state.reunioes[tipo];
+  const totalDatas = data.reduce((s,r)=>s+(r.datasImportantes?.length||0), 0);
+  const obras = new Set(data.flatMap(r=>r.obras?.map(o=>o.id)||[])).size;
+  const finalizadas = data.filter(r=>r.finalizada).length;
+  el.innerHTML = `
+    <div class="stat-card"><div class="stat-num" style="color:${tipoColor[tipo]}">${data.length}</div><div class="stat-label">Atas</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--green)">${finalizadas}</div><div class="stat-label">Finalizadas</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--accent)">${totalDatas}</div><div class="stat-label">Datas registradas</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--accent3)">${obras}</div><div class="stat-label">Obras discutidas</div></div>
+  `;
+}
+
+function verAta(tipo, id) {
+  const r = state.reunioes[tipo].find(x=>x.id===id);
+  if(!r) return;
+  document.getElementById('modal-ata-title').textContent = `Ata — Reunião ${tipoLabel[tipo]} — ${formatDate(r.data)}`;
+  const datas = r.datasImportantes || [];
+  document.getElementById('modal-ata-content').innerHTML = `
+    <div style="margin-bottom:12px"><strong style="color:var(--muted);font-size:12px">OBRAS</strong>
+      <div style="margin-top:4px">${r.obras?.map(o=>`<span class="obra-chip">${o.nome}</span>`).join('') || '—'}</div>
+    </div>
+    <div style="margin-bottom:12px"><strong style="color:var(--muted);font-size:12px">PARTICIPANTES</strong>
+      <p style="margin-top:4px;font-size:14px">${r.participantes || '—'}</p>
+    </div>
+    <div style="margin-bottom:12px"><strong style="color:var(--muted);font-size:12px">PAUTA / DISCUSSÕES</strong>
+      <p style="margin-top:4px;font-size:14px;white-space:pre-wrap">${r.pauta}</p>
+    </div>
+    <div style="margin-bottom:12px"><strong style="color:var(--muted);font-size:12px">DECISÕES / ENCAMINHAMENTOS</strong>
+      <p style="margin-top:4px;font-size:14px;white-space:pre-wrap">${r.decisoes || '—'}</p>
+    </div>
+    ${datas.length ? `
+    <div>
+      <strong style="color:var(--muted);font-size:12px">📌 DATAS PARA COMPRADORES</strong>
+      <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
+        ${datas.map(d => {
+          const comp = state.compradores.find(c=>c.id===d.comprador);
+          return `<div class="item-row" style="padding:10px">
+            <div>
+              <div style="font-size:13px;font-weight:600">${d.desc}</div>
+              <div style="font-size:12px;color:var(--muted)">📅 ${d.data ? formatDate(d.data) : '?'} · ${comp ? comp.nome : 'Sem comprador'}${(() => { const ob = state.obras.find(o=>o.id===d.obra); return ob ? ' · 🏗️ '+ob.nome : ''; })()}</div>
+            </div>
+            <span class="tag tag-${d.urgencia}">${d.urgencia}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : ''}
+  `;
+  openModal('modal-ata');
+}
+
+function excluirReuniao(tipo, id) {
+  if(!confirm('Excluir esta ata?')) return;
+  state.reunioes[tipo] = state.reunioes[tipo].filter(r=>r.id!==id);
+  saveState();
+  renderReuniao(tipo);
+  renderRepasse();
+  notify('Ata excluída.', '🗑️');
+}
+
+// ═══════════════════════════════════════════
+// REPASSE — datas de reuniões
+// ═══════════════════════════════════════════
+function renderRepasse() {
+  const el = document.getElementById('repasse-list');
+  if(!el) return;
+  const all = [];
+  ['enc','eng','lid'].forEach(tipo => {
+    state.reunioes[tipo].forEach(r => {
+      (r.datasImportantes||[]).forEach(d => {
+        if(d.desc) all.push({...d, tipoReuniao: tipo, reuniaoData: r.data});
+      });
+    });
+  });
+  if(!all.length) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>Nenhuma data de reunião pendente.</p></div>`;
+    return;
+  }
+  all.sort((a,b) => (a.data||'').localeCompare(b.data||''));
+  el.innerHTML = all.map(d => {
+    const comp = state.compradores.find(c=>c.id===d.comprador);
+    const hoje = new Date().toISOString().split('T')[0];
+    const vencido = d.data && d.data < hoje;
+    return `<div class="item-row" style="margin-bottom:6px">
+      <div class="item-main">
+        <div style="font-size:12px;font-weight:600">${d.desc}<span class="tag tag-${d.urgencia}" style="margin-left:4px">${d.urgencia}</span></div>
+        <div style="font-size:11px;color:var(--muted)">
+          ${vencido ? '<span class="alert-dot"></span>' : '<span class="alert-dot ok"></span>'}
+          ${d.data ? formatDate(d.data) : 'sem data'} · ${comp ? comp.nome : 'Sem comprador'} · Reun. ${tipoLabel[d.tipoReuniao]}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// AGENDA
+// ═══════════════════════════════════════════
+function salvarAgenda() {
+  const data = document.getElementById('age-data').value;
+  const hora = document.getElementById('age-hora').value;
+  const desc = document.getElementById('age-desc').value;
+  const tipo = document.getElementById('age-tipo').value;
+  const prioridade = document.getElementById('age-prioridade').value;
+  const comprador = document.getElementById('age-comprador').value;
+  const obra = document.getElementById('age-obra').value;
+  if(!desc) { notify('Preencha a descrição!','⚠️'); return; }
+  state.agenda.unshift({ id:Date.now().toString(), data, hora, desc, tipo, prioridade, comprador, obra });
+  saveState();
+  renderAgenda();
+  renderCalendar();
+  notify('Tarefa adicionada!','✅');
+  document.getElementById('age-data').value='';
+  document.getElementById('age-hora').value='';
+  document.getElementById('age-desc').value='';
+  document.getElementById('age-obra').value='';
+}
+
+function renderAgenda() {
+  const list = document.getElementById('list-age');
+  if(!state.agenda.length) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">✅</div><p>Nenhuma tarefa adicionada.</p></div>`;
+    return;
+  }
+  const hoje = new Date().toISOString().split('T')[0];
+  list.innerHTML = state.agenda.map(t => {
+    const vencido = !t.finalizada && t.data && t.data < hoje;
+    const comp = state.compradores.find(c=>c.id===t.comprador);
+    const obra = state.obras.find(o=>o.id===t.obra);
+    const tipoEmoji = { tarefa:'📋', alerta:'🚨', reuniao:'🤝' }[t.tipo] || '📋';
+    const finTag = t.finalizada
+      ? `<span class="tag-finalizada">✅ Finalizada</span>`
+      : (vencido ? `<span class="tag-alta" style="font-size:10px;padding:2px 8px;border-radius:4px;margin-left:6px">⚠️ Vencida</span>` : '');
+    return `<div class="item-row${t.finalizada?' finalizada':''}">
+      <div class="item-main">
+        <div class="item-title">${tipoEmoji} ${t.desc} <span class="tag tag-${t.prioridade}">${t.prioridade}</span>${finTag}</div>
+        <div class="item-meta">
+          ${vencido ? '<span class="alert-dot"></span>' : (t.finalizada ? '<span class="alert-dot ok"></span>' : '')}
+          ${t.data ? formatDate(t.data) : 'Sem data'} ${t.hora ? '· '+t.hora : ''}
+          ${obra ? `· 🏗️ ${obra.nome}` : ''}
+          ${comp ? '· 👤 '+comp.nome : ''}
+          ${t.origemReuniao ? `<span style="font-size:10px;background:#3ab4f211;color:var(--engenheiro);border:1px solid #3ab4f233;border-radius:4px;padding:1px 6px;margin-left:4px">📋 Reunião ${t.origemReuniao}</span>` : ''}
+        </div>
+      </div>
+      <div class="item-actions">
+        ${!t.finalizada
+          ? `<button class="btn btn-finalizar btn-sm" onclick="finalizarTarefa('${t.id}')">✅</button>`
+          : `<button class="btn btn-ghost btn-sm" onclick="reabrirTarefa('${t.id}')">🔓</button>`}
+        <button class="btn btn-danger btn-sm" onclick="excluirAgenda('${t.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function finalizarTarefa(id) {
+  const t = state.agenda.find(x=>x.id===id);
+  if(t) { t.finalizada = true; saveState(); renderAgenda(); renderCalendar(); notify('Tarefa finalizada!','✅'); }
+}
+function reabrirTarefa(id) {
+  const t = state.agenda.find(x=>x.id===id);
+  if(t) { t.finalizada = false; saveState(); renderAgenda(); renderCalendar(); notify('Tarefa reaberta.','🔓'); }
+}
+
+function excluirAgenda(id) {
+  state.agenda = state.agenda.filter(t=>t.id!==id);
+  saveState();
+  renderAgenda();
+  renderCalendar();
+}
+
+// ═══════════════════════════════════════════
+// CALENDAR
+// ═══════════════════════════════════════════
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+
+function changeMonth(dir) {
+  calMonth += dir;
+  if(calMonth > 11) { calMonth = 0; calYear++; }
+  if(calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('cal-month-title').textContent = `${months[calMonth]} ${calYear}`;
+  const grid = document.getElementById('calendar-grid');
+  if(!grid) return;
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  // Build event map
+  const eventMap = {};
+  state.agenda.forEach(t => {
+    if(t.data) {
+      if(!eventMap[t.data]) eventMap[t.data] = [];
+      eventMap[t.data].push({label: t.desc.substring(0,15), cls: t.tipo === 'alerta' ? 'alerta' : 'tarefa'});
+    }
+  });
+  // Add reunião dates
+  ['enc','eng','lid'].forEach(tipo => {
+    state.reunioes[tipo].forEach(r => {
+      (r.datasImportantes||[]).forEach(d => {
+        if(d.data) {
+          if(!eventMap[d.data]) eventMap[d.data] = [];
+          eventMap[d.data].push({label: d.desc.substring(0,15), cls: 'meeting'});
+        }
+      });
+    });
+  });
+
+  let html = '';
+  for(let i=0; i<firstDay; i++) html += `<div class="cal-day empty"></div>`;
+  for(let d=1; d<=daysInMonth; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = dateStr === todayStr;
+    const events = eventMap[dateStr] || [];
+    html += `<div class="cal-day${isToday?' today':''}">
+      <div class="cal-day-num">${d}</div>
+      ${events.slice(0,2).map(e=>`<div class="cal-event ${e.cls}">${e.label}</div>`).join('')}
+      ${events.length > 2 ? `<div style="font-size:9px;color:var(--muted)">+${events.length-2}</div>` : ''}
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════
+// CADASTROS
+// ═══════════════════════════════════════════
+function salvarObra() {
+  const nome = document.getElementById('obra-nome').value.trim();
+  if(!nome) { notify('Informe o nome da obra!','⚠️'); return; }
+  const obra = {
+    id: Date.now().toString(),
+    nome,
+    cidade: document.getElementById('obra-cidade').value,
+    status: document.getElementById('obra-status').value,
+    comprador: document.getElementById('obra-comprador').value,
+    engenheiro: document.getElementById('obra-engenheiro').value,
+    cor: document.getElementById('obra-cor').value,
+  };
+  state.obras.push(obra);
+  saveState();
+  renderObras();
+  populateSelects();
+  notify('Obra cadastrada!','🏗️');
+  document.getElementById('obra-nome').value='';
+  document.getElementById('obra-cidade').value='';
+}
+
+function renderObras() {
+  const list = document.getElementById('list-obras');
+  const statsEl = document.getElementById('stats-obras');
+  if(!state.obras.length) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">🏗️</div><p>Nenhuma obra cadastrada.</p></div>`;
+    if(statsEl) statsEl.innerHTML = '';
+    return;
+  }
+  const statusCount = {};
+  state.obras.forEach(o => { statusCount[o.status] = (statusCount[o.status]||0)+1; });
+  if(statsEl) {
+    statsEl.innerHTML = Object.entries(statusCount).map(([s,n])=>
+      `<div class="stat-card"><div class="stat-num" style="color:var(--accent)">${n}</div><div class="stat-label">${s}</div></div>`
+    ).join('') + `<div class="stat-card"><div class="stat-num" style="color:var(--green)">${state.obras.length}</div><div class="stat-label">Total obras</div></div>`;
+  }
+  list.innerHTML = state.obras.map(o => {
+    const comp = state.compradores.find(c=>c.id===o.comprador);
+    const eng = state.engenheiros.find(e=>e.id===o.engenheiro);
+    return `<div class="item-row">
+      <div style="width:4px;height:40px;background:${o.cor};border-radius:4px;flex-shrink:0"></div>
+      <div class="item-main">
+        <div class="item-title">${o.nome} <span class="tag tag-${o.status==='Em andamento'?'baixa':o.status==='Paralisada'?'alta':'media'}">${o.status}</span></div>
+        <div class="item-meta">${o.cidade||''} ${comp?'· Comprador: '+comp.nome:''} ${eng?'· Eng.: '+eng.nome:''}</div>
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-edit btn-sm" onclick="editarObra('${o.id}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="excluirObra('${o.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function excluirObra(id) {
+  if(!confirm('Excluir esta obra?')) return;
+  state.obras = state.obras.filter(o=>o.id!==id);
+  saveState(); renderObras(); populateSelects(); notify('Obra excluída.','🗑️');
+}
+
+function salvarComprador() {
+  const nome = document.getElementById('comp-nome').value.trim();
+  if(!nome) { notify('Informe o nome!','⚠️'); return; }
+  state.compradores.push({
+    id: Date.now().toString(),
+    nome,
+    tel: document.getElementById('comp-tel').value,
+    email: document.getElementById('comp-email').value,
+    esp: document.getElementById('comp-esp').value,
+  });
+  saveState(); renderCompradores(); populateSelects(); notify('Comprador cadastrado!','🛒');
+  document.getElementById('comp-nome').value='';
+  document.getElementById('comp-tel').value='';
+  document.getElementById('comp-email').value='';
+  document.getElementById('comp-esp').value='';
+}
+
+function renderCompradores() {
+  const list = document.getElementById('list-compradores');
+  if(!state.compradores.length) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">🛒</div><p>Nenhum comprador cadastrado.</p></div>`;
+    return;
+  }
+  list.innerHTML = state.compradores.map(c => `
+    <div class="item-row">
+      <div class="item-main">
+        <div class="item-title">👤 ${c.nome}</div>
+        <div class="item-meta">${c.tel||''} ${c.email?'· '+c.email:''} ${c.esp?'· '+c.esp:''}</div>
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-edit btn-sm" onclick="editarComprador('${c.id}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="excluirComprador('${c.id}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+function excluirComprador(id) {
+  if(!confirm('Excluir comprador?')) return;
+  state.compradores = state.compradores.filter(c=>c.id!==id);
+  saveState(); renderCompradores(); populateSelects(); notify('Comprador excluído.','🗑️');
+}
+
+function salvarEngenheiro() {
+  const nome = document.getElementById('eng-nome').value.trim();
+  if(!nome) { notify('Informe o nome!','⚠️'); return; }
+  state.engenheiros.push({
+    id: Date.now().toString(),
+    nome,
+    crea: document.getElementById('eng-crea').value,
+    esp: document.getElementById('eng-esp').value,
+    tel: document.getElementById('eng-tel').value,
+    email: document.getElementById('eng-email').value,
+  });
+  saveState(); renderEngenheiros(); populateSelects(); notify('Engenheiro cadastrado!','🔧');
+  document.getElementById('eng-nome').value='';
+  document.getElementById('eng-crea').value='';
+  document.getElementById('eng-esp').value='';
+  document.getElementById('eng-tel').value='';
+  document.getElementById('eng-email').value='';
+}
+
+function renderEngenheiros() {
+  const list = document.getElementById('list-engenheiros');
+  if(!state.engenheiros.length) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">🔧</div><p>Nenhum engenheiro cadastrado.</p></div>`;
+    return;
+  }
+  list.innerHTML = state.engenheiros.map(e => `
+    <div class="item-row">
+      <div class="item-main">
+        <div class="item-title">👷 ${e.nome} ${e.crea?`<span style="font-size:11px;color:var(--muted)">· ${e.crea}</span>`:''}</div>
+        <div class="item-meta">${e.esp||''} ${e.tel?'· '+e.tel:''} ${e.email?'· '+e.email:''}</div>
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-edit btn-sm" onclick="editarEngenheiro('${e.id}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="excluirEngenheiro('${e.id}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+function excluirEngenheiro(id) {
+  if(!confirm('Excluir engenheiro?')) return;
+  state.engenheiros = state.engenheiros.filter(e=>e.id!==id);
+  saveState(); renderEngenheiros(); populateSelects(); notify('Engenheiro excluído.','🗑️');
+}
+
+// ═══════════════════════════════════════════
+// ENCARREGADOS CADASTRO
+// ═══════════════════════════════════════════
+function salvarEncarregado() {
+  const nome = document.getElementById('enc-nome-cad').value.trim();
+  if(!nome) { notify('Informe o nome!','⚠️'); return; }
+  if(!state.encarregados) state.encarregados = [];
+  state.encarregados.push({
+    id: Date.now().toString(),
+    nome,
+    tel: document.getElementById('enc-tel-cad').value,
+    email: document.getElementById('enc-email-cad').value,
+    func: document.getElementById('enc-func-cad').value,
+    obra: document.getElementById('enc-obra-cad').value,
+  });
+  saveState(); renderEncarregados(); notify('Encarregado cadastrado!','👷');
+  document.getElementById('enc-nome-cad').value='';
+  document.getElementById('enc-tel-cad').value='';
+  document.getElementById('enc-email-cad').value='';
+  document.getElementById('enc-func-cad').value='';
+  document.getElementById('enc-obra-cad').value='';
+}
+
+function renderEncarregados() {
+  if(!state.encarregados) state.encarregados = [];
+  const list = document.getElementById('list-encarregados');
+  if(!list) return;
+  if(!state.encarregados.length) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">👷</div><p>Nenhum encarregado cadastrado.</p></div>`;
+    return;
+  }
+  list.innerHTML = state.encarregados.map(e => {
+    const obra = state.obras.find(o=>o.id===e.obra);
+    const escId = e.id.replace(/[^a-zA-Z0-9_-]/g, '');
+    return `<div class="item-row">
+      <div class="item-main">
+        <div class="item-title">👷 ${e.nome} ${e.func ? '<span style="font-size:11px;color:var(--muted)">· '+e.func+'</span>' : ''}</div>
+        <div class="item-meta">
+          ${e.tel ? e.tel : ''}
+          ${e.email ? '· '+e.email : ''}
+          ${obra ? '· 🏗️ '+obra.nome : ''}
+        </div>
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-edit btn-sm" data-enc-id="${e.id}" onclick="editarEncarregadoById(this)">✏️</button>
+        <button class="btn btn-danger btn-sm" data-enc-id="${e.id}" onclick="excluirEncarregadoById(this)">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function editarEncarregadoById(btn) {
+  const id = btn.getAttribute('data-enc-id');
+  editarEncarregado(id);
+}
+function excluirEncarregadoById(btn) {
+  const id = btn.getAttribute('data-enc-id');
+  excluirEncarregado(id);
+}
+
+function excluirEncarregado(id) {
+  if(!confirm('Excluir encarregado?')) return;
+  state.encarregados = state.encarregados.filter(e=>e.id!==id);
+  saveState(); renderEncarregados(); notify('Encarregado excluído.','🗑️');
+}
+
+function editarEncarregado(id) {
+  if(!state.encarregados) state.encarregados = [];
+  const e = state.encarregados.find(x => String(x.id) === String(id));
+  if(!e) { notify('Encarregado não encontrado!','⚠️'); return; }
+  document.getElementById('edit-enc-cad-id').value = String(e.id);
+  document.getElementById('edit-enc-cad-nome').value = e.nome || '';
+  document.getElementById('edit-enc-cad-tel').value = e.tel || '';
+  document.getElementById('edit-enc-cad-email').value = e.email || '';
+  document.getElementById('edit-enc-cad-func').value = e.func || '';
+  const obraOpts = `<option value="">— Nenhuma —</option>` + state.obras.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
+  const obraEl = document.getElementById('edit-enc-cad-obra');
+  obraEl.innerHTML = obraOpts;
+  obraEl.value = e.obra || '';
+  openModal('modal-edit-enc-cad');
+}
+
+function salvarEdicaoEncarregado() {
+  const id = document.getElementById('edit-enc-cad-id').value;
+  const e = state.encarregados.find(x => String(x.id) === String(id));
+  if(!e) { notify('Erro ao salvar!','⚠️'); return; }
+  e.nome = document.getElementById('edit-enc-cad-nome').value.trim();
+  e.tel = document.getElementById('edit-enc-cad-tel').value;
+  e.email = document.getElementById('edit-enc-cad-email').value;
+  e.func = document.getElementById('edit-enc-cad-func').value;
+  e.obra = document.getElementById('edit-enc-cad-obra').value;
+  saveState(); renderEncarregados(); closeModal('modal-edit-enc-cad'); notify('Encarregado atualizado!','👷');
+}
+
+function finalizarAta(tipo, id) {
+  const r = state.reunioes[tipo].find(x=>x.id===id);
+  if(r) { r.finalizada = true; saveState(); renderReuniao(tipo); notify('Pauta finalizada!','✅'); }
+}
+function reabrirAta(tipo, id) {
+  const r = state.reunioes[tipo].find(x=>x.id===id);
+  if(r) { r.finalizada = false; saveState(); renderReuniao(tipo); notify('Pauta reaberta.','🔓'); }
+}
+function editarAta(tipo, id) {
+  const r = state.reunioes[tipo].find(x=>x.id===id);
+  if(!r) return;
+  document.getElementById('edit-ata-id').value = r.id;
+  document.getElementById('edit-ata-tipo').value = tipo;
+  document.getElementById('edit-ata-data').value = r.data;
+  document.getElementById('edit-ata-participantes').value = r.participantes || '';
+  document.getElementById('edit-ata-pauta').value = r.pauta || '';
+  document.getElementById('edit-ata-decisoes').value = r.decisoes || '';
+  openModal('modal-edit-ata');
+}
+function salvarEdicaoAta() {
+  const id = document.getElementById('edit-ata-id').value;
+  const tipo = document.getElementById('edit-ata-tipo').value;
+  const r = state.reunioes[tipo].find(x=>x.id===id);
+  if(!r) return;
+  r.data = document.getElementById('edit-ata-data').value;
+  r.participantes = document.getElementById('edit-ata-participantes').value;
+  r.pauta = document.getElementById('edit-ata-pauta').value;
+  r.decisoes = document.getElementById('edit-ata-decisoes').value;
+  saveState(); renderReuniao(tipo); closeModal('modal-edit-ata'); notify('Ata atualizada!','✏️');
+}
+
+// ─── EDIT OBRA ───
+function editarObra(id) {
+  const o = state.obras.find(x=>x.id===id);
+  if(!o) return;
+  document.getElementById('edit-obra-id').value = o.id;
+  document.getElementById('edit-obra-nome').value = o.nome;
+  document.getElementById('edit-obra-cidade').value = o.cidade || '';
+  document.getElementById('edit-obra-status').value = o.status;
+  document.getElementById('edit-obra-cor').value = o.cor || '#f0a500';
+  // populate selects
+  const compOpts = `<option value="">— Nenhum —</option>` + state.compradores.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  document.getElementById('edit-obra-comprador').innerHTML = compOpts;
+  document.getElementById('edit-obra-comprador').value = o.comprador || '';
+  const engOpts = `<option value="">— Nenhum —</option>` + state.engenheiros.map(e=>`<option value="${e.id}">${e.nome}</option>`).join('');
+  document.getElementById('edit-obra-engenheiro').innerHTML = engOpts;
+  document.getElementById('edit-obra-engenheiro').value = o.engenheiro || '';
+  openModal('modal-edit-obra');
+}
+function salvarEdicaoObra() {
+  const id = document.getElementById('edit-obra-id').value;
+  const o = state.obras.find(x=>x.id===id);
+  if(!o) return;
+  o.nome = document.getElementById('edit-obra-nome').value.trim();
+  o.cidade = document.getElementById('edit-obra-cidade').value;
+  o.status = document.getElementById('edit-obra-status').value;
+  o.comprador = document.getElementById('edit-obra-comprador').value;
+  o.engenheiro = document.getElementById('edit-obra-engenheiro').value;
+  o.cor = document.getElementById('edit-obra-cor').value;
+  saveState(); renderObras(); populateSelects(); closeModal('modal-edit-obra'); notify('Obra atualizada!','🏗️');
+}
+
+// ─── EDIT COMPRADOR ───
+function editarComprador(id) {
+  const c = state.compradores.find(x=>x.id===id);
+  if(!c) return;
+  document.getElementById('edit-comp-id').value = c.id;
+  document.getElementById('edit-comp-nome').value = c.nome;
+  document.getElementById('edit-comp-tel').value = c.tel || '';
+  document.getElementById('edit-comp-email').value = c.email || '';
+  document.getElementById('edit-comp-esp').value = c.esp || '';
+  openModal('modal-edit-comp');
+}
+function salvarEdicaoComprador() {
+  const id = document.getElementById('edit-comp-id').value;
+  const c = state.compradores.find(x=>x.id===id);
+  if(!c) return;
+  c.nome = document.getElementById('edit-comp-nome').value.trim();
+  c.tel = document.getElementById('edit-comp-tel').value;
+  c.email = document.getElementById('edit-comp-email').value;
+  c.esp = document.getElementById('edit-comp-esp').value;
+  saveState(); renderCompradores(); populateSelects(); closeModal('modal-edit-comp'); notify('Comprador atualizado!','🛒');
+}
+
+// ─── EDIT ENGENHEIRO ───
+function editarEngenheiro(id) {
+  const e = state.engenheiros.find(x=>x.id===id);
+  if(!e) return;
+  document.getElementById('edit-eng-id').value = e.id;
+  document.getElementById('edit-eng-nome').value = e.nome;
+  document.getElementById('edit-eng-crea').value = e.crea || '';
+  document.getElementById('edit-eng-esp').value = e.esp || '';
+  document.getElementById('edit-eng-tel').value = e.tel || '';
+  document.getElementById('edit-eng-email').value = e.email || '';
+  openModal('modal-edit-eng');
+}
+function salvarEdicaoEngenheiro() {
+  const id = document.getElementById('edit-eng-id').value;
+  const e = state.engenheiros.find(x=>x.id===id);
+  if(!e) return;
+  e.nome = document.getElementById('edit-eng-nome').value.trim();
+  e.crea = document.getElementById('edit-eng-crea').value;
+  e.esp = document.getElementById('edit-eng-esp').value;
+  e.tel = document.getElementById('edit-eng-tel').value;
+  e.email = document.getElementById('edit-eng-email').value;
+  saveState(); renderEngenheiros(); populateSelects(); closeModal('modal-edit-eng'); notify('Engenheiro atualizado!','🔧');
+}
+
+// ═══════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); });
+});
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+function formatDate(d) {
+  if(!d) return '—';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+// ═══════════════════════════════════════════
+// ALERT CHECKER (notificações do browser)
+// ═══════════════════════════════════════════
+function checkAlerts() {
+  const hoje = new Date().toISOString().split('T')[0];
+  const alertas = state.agenda.filter(t => t.tipo === 'alerta' && t.data === hoje);
+  if(alertas.length && 'Notification' in window && Notification.permission === 'granted') {
+    alertas.forEach(a => {
+      new Notification('⚠️ Alerta — Compras', { body: a.desc });
+    });
+  }
+}
+
+// ═══════════════════════════════════════════
+// EXPORTAR / IMPORTAR
+// ═══════════════════════════════════════════
+
+function exportarJSON() {
+  const json = JSON.stringify(state, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const hoje = new Date().toISOString().split('T')[0];
+  a.href = url;
+  a.download = `backup_reunioes_${hoje}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  notify('Backup JSON exportado!', '⬇️');
+}
+
+function importarJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!imported.obras && !imported.reunioes && !imported.agenda) {
+        notify('Arquivo JSON inválido!', '⚠️'); return;
+      }
+      if (!confirm('Isso vai substituir todos os dados atuais pelo backup. Confirmar?')) return;
+      state = imported;
+      saveState();
+      populateSelects();
+      renderReuniao('enc'); renderReuniao('eng'); renderReuniao('lid');
+      renderObras(); renderCompradores(); renderEngenheiros();
+      renderAgenda(); renderCalendar(); renderRepasse();
+      notify('Dados importados com sucesso!', '✅');
+    } catch(err) {
+      notify('Erro ao ler o arquivo JSON!', '❌');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function exportarExcel() {
+  const wb = XLSX.utils.book_new();
+
+  // ── Aba: Obras ──
+  const obrasData = state.obras.map(o => {
+    const comp = state.compradores.find(c => c.id === o.comprador);
+    const eng = state.engenheiros.find(e => e.id === o.engenheiro);
+    return {
+      'Nome da Obra': o.nome || '',
+      'Município': o.cidade || '',
+      'Status': o.status || '',
+      'Comprador': comp ? comp.nome : '',
+      'Engenheiro': eng ? eng.nome : '',
+    };
+  });
+  if (obrasData.length) {
+    const ws = XLSX.utils.json_to_sheet(obrasData);
+    estilizarCabecalho(ws, obrasData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Obras');
+  }
+
+  // ── Aba: Compradores ──
+  const compData = state.compradores.map(c => ({
+    'Nome': c.nome || '',
+    'Telefone': c.tel || '',
+    'E-mail': c.email || '',
+    'Especialidade': c.esp || '',
+  }));
+  if (compData.length) {
+    const ws = XLSX.utils.json_to_sheet(compData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Compradores');
+  }
+
+  // ── Aba: Engenheiros ──
+  const engData = state.engenheiros.map(e => ({
+    'Nome': e.nome || '',
+    'CREA': e.crea || '',
+    'Especialidade': e.esp || '',
+    'Telefone': e.tel || '',
+    'E-mail': e.email || '',
+  }));
+  if (engData.length) {
+    const ws = XLSX.utils.json_to_sheet(engData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Engenheiros');
+  }
+
+  // ── Aba: Encarregados ──
+  const encCadData = (state.encarregados || []).map(e => {
+    const obra = state.obras.find(o => o.id === e.obra);
+    return {
+      'Nome': e.nome || '',
+      'Telefone': e.tel || '',
+      'E-mail': e.email || '',
+      'Função': e.func || '',
+      'Obra Vinculada': obra ? obra.nome : '',
+    };
+  });
+  if (encCadData.length) {
+    const ws = XLSX.utils.json_to_sheet(encCadData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Encarregados');
+  }
+
+  // ── Aba: Atas (todas as reuniões) ──
+  const atasData = [];
+  ['enc', 'eng', 'lid'].forEach(tipo => {
+    const label = { enc: 'Encarregados', eng: 'Engenheiros', lid: 'Liderança' }[tipo];
+    state.reunioes[tipo].forEach(r => {
+      atasData.push({
+        'Tipo de Reunião': label,
+        'Data': r.data ? formatDate(r.data) : '',
+        'Participantes': r.participantes || '',
+        'Obras': r.obras?.map(o => o.nome).join('; ') || '',
+        'Pauta': r.pauta || '',
+        'Decisões': r.decisoes || '',
+        'Status': r.finalizada ? 'Finalizada' : 'Pendente',
+        'Datas Importantes': (r.datasImportantes || []).map(d => `${d.desc} (${d.data ? formatDate(d.data) : '?'})`).join(' | '),
+      });
+    });
+  });
+  if (atasData.length) {
+    const ws = XLSX.utils.json_to_sheet(atasData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Atas de Reunião');
+  }
+
+  // ── Aba: Datas Importantes ──
+  const datasData = [];
+  ['enc', 'eng', 'lid'].forEach(tipo => {
+    const label = { enc: 'Encarregados', eng: 'Engenheiros', lid: 'Liderança' }[tipo];
+    state.reunioes[tipo].forEach(r => {
+      (r.datasImportantes || []).forEach(d => {
+        const comp = state.compradores.find(c => c.id === d.comprador);
+        const obraD2 = state.obras.find(o => o.id === d.obra);
+        datasData.push({
+          'Origem': label,
+          'Data da Reunião': r.data ? formatDate(r.data) : '',
+          'Data Limite': d.data ? formatDate(d.data) : '',
+          'Descrição': d.desc || '',
+          'Obra': obraD2 ? obraD2.nome : '',
+          'Comprador': comp ? comp.nome : '',
+          'Urgência': d.urgencia || '',
+        });
+      });
+    });
+  });
+  if (datasData.length) {
+    const ws = XLSX.utils.json_to_sheet(datasData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Datas p. Compradores');
+  }
+
+  // ── Aba: Agenda ──
+  const agendaData = state.agenda.map(t => {
+    const comp = state.compradores.find(c => c.id === t.comprador);
+    const obra = state.obras.find(o => o.id === t.obra);
+    return {
+      'Data': t.data ? formatDate(t.data) : '',
+      'Hora': t.hora || '',
+      'Descrição': t.desc || '',
+      'Tipo': t.tipo || '',
+      'Prioridade': t.prioridade || '',
+      'Obra': obra ? obra.nome : '',
+      'Comprador': comp ? comp.nome : '',
+      'Origem Reunião': t.origemReuniao || '',
+      'Status': t.finalizada ? 'Finalizada' : 'Pendente',
+    };
+  });
+  if (agendaData.length) {
+    const ws = XLSX.utils.json_to_sheet(agendaData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Agenda');
+  }
+
+  const hoje = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, `reunioes_compras_${hoje}.xlsx`);
+  notify('Excel exportado com sucesso!', '📊');
+}
+
+function estilizarCabecalho(ws, data) {
+  // SheetJS basic — apenas ajusta largura das colunas
+  if (!data.length) return;
+  const cols = Object.keys(data[0]);
+  ws['!cols'] = cols.map(k => ({ wch: Math.max(k.length, 18) }));
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+function init() {
+  loadState();
+  updateHeaderDate();
+  setInterval(updateHeaderDate, 60000);
+
+  // Set today's date in all date inputs
+  const hoje = new Date().toISOString().split('T')[0];
+  ['enc-data','eng-data','lid-data','age-data'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = hoje;
+  });
+
+  populateSelects();
+  renderReuniao('enc');
+  renderReuniao('eng');
+  renderReuniao('lid');
+  renderObras();
+  renderCompradores();
+  renderEngenheiros();
+  renderEncarregados();
+  renderAgenda();
+  renderCalendar();
+  renderRepasse();
+
+  // Request notification permission
+  if('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+  checkAlerts();
+}
+
+init();
+</script>
+</body>
+</html>
