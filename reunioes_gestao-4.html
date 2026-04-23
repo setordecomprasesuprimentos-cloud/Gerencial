@@ -944,7 +944,33 @@
       </div>
 
       <div class="card">
-        <div class="card-title" style="margin-bottom:12px">📋 Tarefas da Agenda</div>
+        <div class="card-header">
+          <div class="card-title">📋 Tarefas da Agenda</div>
+          <button class="btn btn-ghost btn-sm" onclick="limparFiltrosAge()">✕ Limpar</button>
+        </div>
+        <div class="filter-bar" style="margin-bottom:12px">
+          <input type="date" id="age-filter-data-de" title="De" onchange="renderAgenda()" style="max-width:140px">
+          <input type="date" id="age-filter-data-ate" title="Até" onchange="renderAgenda()" style="max-width:140px">
+          <select id="age-filter-obra" onchange="renderAgenda()">
+            <option value="">Todas obras</option>
+          </select>
+          <select id="age-filter-comprador" onchange="renderAgenda()">
+            <option value="">Todos compradores</option>
+          </select>
+          <select id="age-filter-prio" onchange="renderAgenda()">
+            <option value="">Todas prioridades</option>
+            <option value="alta">🔴 Alta</option>
+            <option value="media">🟡 Média</option>
+            <option value="baixa">🟢 Baixa</option>
+          </select>
+          <select id="age-filter-status" onchange="renderAgenda()">
+            <option value="">Todos status</option>
+            <option value="pendente">⏳ Pendente</option>
+            <option value="finalizada">✅ Finalizada</option>
+            <option value="vencida">⚠️ Vencida</option>
+          </select>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px" id="age-filter-count"></div>
         <div class="scrollable">
           <div class="item-list" id="list-age">
             <div class="empty-state"><div class="icon">✅</div><p>Nenhuma tarefa adicionada.</p></div>
@@ -1934,12 +1960,65 @@ function salvarAgenda() {
 
 function renderAgenda() {
   const list = document.getElementById('list-age');
+  const countEl = document.getElementById('age-filter-count');
+
+  // populate filter selects (once)
+  const obraFilterEl = document.getElementById('age-filter-obra');
+  if(obraFilterEl && obraFilterEl.options.length <= 1) {
+    state.obras.forEach(o => {
+      const opt = document.createElement('option'); opt.value=o.id; opt.textContent=o.nome;
+      obraFilterEl.appendChild(opt);
+    });
+  }
+  const compFilterEl = document.getElementById('age-filter-comprador');
+  if(compFilterEl && compFilterEl.options.length <= 1) {
+    state.compradores.forEach(c => {
+      const opt = document.createElement('option'); opt.value=c.id; opt.textContent=c.nome;
+      compFilterEl.appendChild(opt);
+    });
+  }
+
   if(!state.agenda.length) {
     list.innerHTML = `<div class="empty-state"><div class="icon">✅</div><p>Nenhuma tarefa adicionada.</p></div>`;
+    if(countEl) countEl.textContent = '';
     return;
   }
+
   const hoje = new Date().toISOString().split('T')[0];
-  list.innerHTML = state.agenda.map(t => {
+  const fDe    = document.getElementById('age-filter-data-de')?.value || '';
+  const fAte   = document.getElementById('age-filter-data-ate')?.value || '';
+  const fObra  = document.getElementById('age-filter-obra')?.value || '';
+  const fComp  = document.getElementById('age-filter-comprador')?.value || '';
+  const fPrio  = document.getElementById('age-filter-prio')?.value || '';
+  const fStatus= document.getElementById('age-filter-status')?.value || '';
+
+  let tasks = [...state.agenda];
+  const total = tasks.length;
+
+  if(fDe)     tasks = tasks.filter(t => t.data && t.data >= fDe);
+  if(fAte)    tasks = tasks.filter(t => t.data && t.data <= fAte);
+  if(fObra)   tasks = tasks.filter(t => t.obra === fObra);
+  if(fComp)   tasks = tasks.filter(t => t.comprador === fComp);
+  if(fPrio)   tasks = tasks.filter(t => t.prioridade === fPrio);
+  if(fStatus) {
+    if(fStatus === 'pendente')   tasks = tasks.filter(t => !t.finalizada && !(t.data && t.data < hoje));
+    if(fStatus === 'finalizada') tasks = tasks.filter(t => t.finalizada);
+    if(fStatus === 'vencida')    tasks = tasks.filter(t => !t.finalizada && t.data && t.data < hoje);
+  }
+
+  const filtered = tasks.length;
+  const hasFilter = fDe||fAte||fObra||fComp||fPrio||fStatus;
+  if(countEl) countEl.textContent = hasFilter ? `Exibindo ${filtered} de ${total} tarefa(s)` : `${total} tarefa(s)`;
+
+  if(!tasks.length) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>Nenhuma tarefa encontrada com esses filtros.</p></div>`;
+    return;
+  }
+
+  // sort by date then hour
+  tasks.sort((a,b) => (a.data||'').localeCompare(b.data||'') || (a.hora||'').localeCompare(b.hora||''));
+
+  list.innerHTML = tasks.map(t => {
     const vencido = !t.finalizada && t.data && t.data < hoje;
     const comp = state.compradores.find(c=>c.id===t.comprador);
     const obra = state.obras.find(o=>o.id===t.obra);
@@ -1966,6 +2045,13 @@ function renderAgenda() {
       </div>
     </div>`;
   }).join('');
+}
+
+function limparFiltrosAge() {
+  ['age-filter-data-de','age-filter-data-ate','age-filter-obra','age-filter-comprador','age-filter-prio','age-filter-status'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value='';
+  });
+  renderAgenda();
 }
 
 function finalizarTarefa(id) {
