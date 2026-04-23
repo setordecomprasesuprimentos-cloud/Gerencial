@@ -497,6 +497,91 @@
     .page { display: block !important; }
     body { background: white; color: black; }
   }
+
+  /* SEGUNDAS-FEIRAS VIEW */
+  .cmp-view-toggle { display:flex; gap:6px; margin-bottom:20px; }
+  .cmp-view-btn {
+    font-family:'Syne',sans-serif; font-size:12px; font-weight:700;
+    padding:7px 16px; border-radius:8px; border:1px solid var(--border);
+    cursor:pointer; background:var(--surface2); color:var(--muted);
+    transition:all .15s; text-transform:uppercase; letter-spacing:.5px;
+  }
+  .cmp-view-btn.active { background:#e879f922; color:#e879f9; border-color:#e879f955; }
+
+  .mondays-section { display:none; }
+  .mondays-section.active { display:block; }
+  .cmp-list-section { display:none; }
+  .cmp-list-section.active { display:block; }
+
+  .monday-year-nav { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
+  .monday-year-nav span { font-family:'Syne',sans-serif; font-weight:800; font-size:16px; }
+
+  .monday-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; margin-bottom:10px; overflow:hidden;
+    transition:border-color .15s;
+  }
+  .monday-card:hover { border-color:#e879f944; }
+  .monday-card-hdr {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 16px; background:var(--surface2); cursor:pointer;
+    user-select:none;
+  }
+  .monday-card-hdr-left { display:flex; align-items:center; gap:10px; }
+  .monday-indicator { width:10px; height:10px; border-radius:50%; background:#e879f9; flex-shrink:0; }
+  .monday-indicator.has { background:var(--accent); }
+  .monday-indicator.past { background:var(--muted); }
+  .monday-card-date { font-family:'Syne',sans-serif; font-weight:700; font-size:14px; }
+  .monday-card-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+  .monday-badge {
+    background:#e879f922; color:#e879f9; border-radius:20px;
+    padding:3px 10px; font-size:11px; font-weight:700;
+    font-family:'Syne',sans-serif;
+  }
+  .monday-badge.zero { background:var(--surface); color:var(--muted); }
+  .monday-badge.has-tasks { background:#f0a50022; color:var(--accent); }
+
+  .monday-card-body { max-height:0; overflow:hidden; transition:max-height .3s ease; }
+  .monday-card-body.open { max-height:800px; }
+  .monday-task-row {
+    display:flex; align-items:flex-start; gap:10px;
+    padding:10px 16px; border-bottom:1px solid var(--border);
+    cursor:pointer; transition:background .12s;
+  }
+  .monday-task-row:last-child { border-bottom:none; }
+  .monday-task-row:hover { background:var(--surface2); }
+  .monday-task-time { font-family:'Syne',sans-serif; font-weight:700; font-size:11px; color:var(--accent3); min-width:42px; padding-top:2px; }
+  .monday-task-info { flex:1; }
+  .monday-task-desc { font-size:13px; }
+  .monday-task-meta { font-size:11px; color:var(--muted); margin-top:3px; }
+  .prio-dot { width:7px; height:7px; border-radius:50%; margin-top:4px; flex-shrink:0; }
+  .prio-dot.alta { background:var(--red); }
+  .prio-dot.media { background:var(--accent); }
+  .prio-dot.baixa { background:var(--green); }
+
+  /* MODAL DIA CALENDÁRIO */
+  .cal-day { cursor:pointer; }
+  #modal-day-tasks .task-edit-form { display:none; }
+  #modal-day-tasks .task-edit-form.open { display:block; }
+  .task-card {
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:8px; padding:12px; margin-bottom:10px;
+    transition:border-color .15s;
+  }
+  .task-card:hover { border-color:var(--accent3); }
+  .task-card-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .task-card-time { font-family:'Syne',sans-serif; font-weight:700; font-size:12px; color:var(--accent3); }
+  .task-card-prio { font-size:10px; padding:2px 7px; border-radius:4px; font-weight:700; text-transform:uppercase; }
+  .task-card-prio.alta { background:#e05c5c22; color:var(--red); }
+  .task-card-prio.media { background:#f0a50022; color:var(--accent); }
+  .task-card-prio.baixa { background:#2ecc8a22; color:var(--green); }
+  .task-card-desc { font-size:13px; margin-bottom:6px; }
+  .add-day-task-btn {
+    width:100%; padding:10px; border-radius:8px; border:1px dashed var(--border);
+    background:transparent; color:var(--muted); cursor:pointer; font-size:13px;
+    transition:all .15s; margin-top:4px;
+  }
+  .add-day-task-btn:hover { border-color:var(--green); color:var(--green); background:#2ecc8a08; }
 </style>
 </head>
 <body>
@@ -1064,39 +1149,57 @@
   <div class="section-title">📌 Compromissos <span class="badge" style="background:#e879f922;color:#e879f9;border:1px solid #e879f955">Gerenciável</span></div>
   <div class="section-sub">Compromissos e prazos de todas as reuniões — edite, filtre e marque como concluído</div>
 
-  <div class="filter-bar">
-    <label>Filtrar:</label>
-    <input type="text" id="cmp-filter-text" placeholder="Buscar descrição..." oninput="renderCompromissos()">
-    <select id="cmp-filter-tipo" onchange="renderCompromissos()">
-      <option value="">Todas as reuniões</option>
-      <option value="enc">Encarregados</option>
-      <option value="eng">Engenheiros</option>
-      <option value="lid">Liderança</option>
-    </select>
-    <select id="cmp-filter-urgencia" onchange="renderCompromissos()">
-      <option value="">Todas urgências</option>
-      <option value="alta">🔴 Alta</option>
-      <option value="media">🟡 Média</option>
-      <option value="baixa">🟢 Baixa</option>
-    </select>
-    <select id="cmp-filter-comprador" onchange="renderCompromissos()">
-      <option value="">Todos compradores</option>
-    </select>
-    <select id="cmp-filter-obra" onchange="renderCompromissos()">
-      <option value="">Todas obras</option>
-    </select>
-    <select id="cmp-filter-status" onchange="renderCompromissos()">
-      <option value="">Todos status</option>
-      <option value="pendente">⏳ Pendente</option>
-      <option value="concluido">✅ Concluído</option>
-      <option value="atrasado">🔴 Atrasado</option>
-    </select>
-    <button class="btn btn-ghost btn-sm" onclick="limparFiltrosCmp()">✕ Limpar</button>
+  <div class="cmp-view-toggle">
+    <button class="cmp-view-btn active" id="btn-view-lista" onclick="setCmpView('lista')">📋 Lista</button>
+    <button class="cmp-view-btn" id="btn-view-segundas" onclick="setCmpView('segundas')">📅 Segundas-feiras</button>
   </div>
 
-  <div class="stats-row" id="stats-cmp"></div>
-  <div class="item-list" id="list-cmp">
-    <div class="empty-state"><div class="icon">📌</div><p>Nenhum compromisso registrado ainda.</p></div>
+  <!-- LISTA VIEW -->
+  <div class="cmp-list-section active" id="cmp-lista-section">
+    <div class="filter-bar">
+      <label>Filtrar:</label>
+      <input type="text" id="cmp-filter-text" placeholder="Buscar descrição..." oninput="renderCompromissos()">
+      <select id="cmp-filter-tipo" onchange="renderCompromissos()">
+        <option value="">Todas as reuniões</option>
+        <option value="enc">Encarregados</option>
+        <option value="eng">Engenheiros</option>
+        <option value="lid">Liderança</option>
+      </select>
+      <select id="cmp-filter-urgencia" onchange="renderCompromissos()">
+        <option value="">Todas urgências</option>
+        <option value="alta">🔴 Alta</option>
+        <option value="media">🟡 Média</option>
+        <option value="baixa">🟢 Baixa</option>
+      </select>
+      <select id="cmp-filter-comprador" onchange="renderCompromissos()">
+        <option value="">Todos compradores</option>
+      </select>
+      <select id="cmp-filter-obra" onchange="renderCompromissos()">
+        <option value="">Todas obras</option>
+      </select>
+      <select id="cmp-filter-status" onchange="renderCompromissos()">
+        <option value="">Todos status</option>
+        <option value="pendente">⏳ Pendente</option>
+        <option value="concluido">✅ Concluído</option>
+        <option value="atrasado">🔴 Atrasado</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="limparFiltrosCmp()">✕ Limpar</button>
+    </div>
+    <div class="stats-row" id="stats-cmp"></div>
+    <div class="item-list" id="list-cmp">
+      <div class="empty-state"><div class="icon">📌</div><p>Nenhum compromisso registrado ainda.</p></div>
+    </div>
+  </div>
+
+  <!-- SEGUNDAS VIEW -->
+  <div class="mondays-section" id="cmp-segundas-section">
+    <div class="monday-year-nav">
+      <button class="btn btn-ghost btn-sm" onclick="changeMonYear(-1)">&#8249;</button>
+      <span id="mon-year-label">2026</span>
+      <button class="btn btn-ghost btn-sm" onclick="changeMonYear(1)">&#8250;</button>
+      <span style="font-size:12px;color:var(--muted);margin-left:6px">todas as segundas-feiras</span>
+    </div>
+    <div id="mondays-list"></div>
   </div>
 </div>
 
@@ -1144,6 +1247,15 @@
       <button class="btn btn-green" style="flex:1" onclick="salvarEdicaoCmp()">💾 Salvar</button>
       <button class="btn btn-finalizar" style="flex:1" onclick="concluirCmpModal()">✅ Marcar Concluído</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL TAREFAS DO DIA (Calendário) -->
+<div class="modal-overlay" id="modal-day-tasks">
+  <div class="modal" style="max-width:580px">
+    <button class="modal-close" onclick="closeModal('modal-day-tasks')">✕</button>
+    <div class="modal-title" id="modal-day-title">Tarefas do Dia</div>
+    <div id="modal-day-body"></div>
   </div>
 </div>
 
@@ -1922,7 +2034,8 @@ function renderCalendar() {
     const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday = dateStr === todayStr;
     const events = eventMap[dateStr] || [];
-    html += `<div class="cal-day${isToday?' today':''}">
+    const hasAgenda = state.agenda.some(t => t.data === dateStr);
+    html += `<div class="cal-day${isToday?' today':''}" onclick="openDayModal('${dateStr}')">
       <div class="cal-day-num">${d}</div>
       ${events.slice(0,2).map(e=>`<div class="cal-event ${e.cls}">${e.label}</div>`).join('')}
       ${events.length > 2 ? `<div style="font-size:9px;color:var(--muted)">+${events.length-2}</div>` : ''}
@@ -2855,6 +2968,288 @@ function estilizarCabecalho(ws, data) {
   if (!data.length) return;
   const cols = Object.keys(data[0]);
   ws['!cols'] = cols.map(k => ({ wch: Math.max(k.length, 18) }));
+}
+
+// ═══════════════════════════════════════════
+// MODAL DIA — CALENDÁRIO
+// ═══════════════════════════════════════════
+function openDayModal(dateStr) {
+  const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const [y,m,d] = dateStr.split('-');
+  const dt = new Date(+y, +m-1, +d);
+  const weekDays = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  document.getElementById('modal-day-title').textContent = `📅 ${weekDays[dt.getDay()]}, ${d} de ${months[+m-1]} de ${y}`;
+
+  const tasks = state.agenda.filter(t => t.data === dateStr).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+  const body = document.getElementById('modal-day-body');
+
+  const obraOpts = `<option value="">— Nenhuma —</option>` + state.obras.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
+  const compOpts = `<option value="">— Nenhum —</option>` + state.compradores.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+
+  function buildTaskCard(t) {
+    const obra = state.obras.find(o=>o.id===t.obra);
+    const comp = state.compradores.find(c=>c.id===t.comprador);
+    const tipoEmoji = {tarefa:'📋',alerta:'🚨',reuniao:'🤝'}[t.tipo]||'📋';
+    return `
+    <div class="task-card" id="tcard-${t.id}">
+      <div class="task-card-top">
+        <span class="task-card-time">${tipoEmoji} ${t.hora||'--:--'}</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="task-card-prio ${t.prioridade||'media'}">${t.prioridade||'média'}</span>
+          ${t.finalizada ? '<span class="tag-finalizada">✅ Feita</span>' : ''}
+          <button class="btn btn-edit btn-sm" onclick="toggleDayTaskEdit('${t.id}','${dateStr}')">✏️</button>
+        </div>
+      </div>
+      <div class="task-card-desc">${t.desc}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">
+        ${obra ? `🏗️ ${obra.nome}` : ''} ${comp ? '· 👤 '+comp.nome : ''}
+        ${t.origemReuniao ? `<span style="font-size:10px;background:#3ab4f211;color:var(--engenheiro);border:1px solid #3ab4f233;border-radius:4px;padding:1px 5px;margin-left:4px">📋 ${t.origemReuniao}</span>` : ''}
+      </div>
+      <!-- edit form -->
+      <div class="task-edit-form" id="tedit-${t.id}">
+        <hr style="border:none;border-top:1px solid var(--border);margin:10px 0">
+        <div class="form-row">
+          <div class="form-group"><label>Hora</label><input type="time" id="tedit-hora-${t.id}" value="${t.hora||''}"></div>
+          <div class="form-group"><label>Tipo</label>
+            <select id="tedit-tipo-${t.id}">
+              <option value="tarefa" ${t.tipo==='tarefa'?'selected':''}>📋 Tarefa</option>
+              <option value="alerta" ${t.tipo==='alerta'?'selected':''}>🚨 Alerta</option>
+              <option value="reuniao" ${t.tipo==='reuniao'?'selected':''}>🤝 Reunião</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Prioridade</label>
+            <select id="tedit-prio-${t.id}">
+              <option value="alta" ${t.prioridade==='alta'?'selected':''}>🔴 Alta</option>
+              <option value="media" ${t.prioridade==='media'?'selected':''}>🟡 Média</option>
+              <option value="baixa" ${t.prioridade==='baixa'?'selected':''}>🟢 Baixa</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:8px"><label>Descrição</label>
+          <input type="text" id="tedit-desc-${t.id}" value="${t.desc}">
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Obra</label>
+            <select id="tedit-obra-${t.id}">${obraOpts}</select>
+          </div>
+          <div class="form-group"><label>Comprador</label>
+            <select id="tedit-comp-${t.id}">${compOpts}</select>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button class="btn btn-green btn-sm" onclick="saveDayTask('${t.id}','${dateStr}')">💾 Salvar</button>
+          ${!t.finalizada
+            ? `<button class="btn btn-finalizar btn-sm" onclick="finalizarTarefaDay('${t.id}','${dateStr}')">✅ Concluir</button>`
+            : `<button class="btn btn-ghost btn-sm" onclick="reabrirTarefaDay('${t.id}','${dateStr}')">🔓 Reabrir</button>`}
+          <button class="btn btn-danger btn-sm" onclick="excluirTarefaDay('${t.id}','${dateStr}')">🗑️ Excluir</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function buildNewTaskForm() {
+    return `
+    <div id="new-day-task-area" style="display:none;background:var(--surface2);border:1px solid var(--green);border-radius:8px;padding:14px;margin-top:8px">
+      <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:10px;font-family:'Syne',sans-serif;">➕ NOVA TAREFA — ${d}/${m}/${y}</div>
+      <div class="form-row">
+        <div class="form-group"><label>Hora</label><input type="time" id="new-day-hora" value="08:00"></div>
+        <div class="form-group"><label>Tipo</label>
+          <select id="new-day-tipo">
+            <option value="tarefa">📋 Tarefa</option>
+            <option value="alerta">🚨 Alerta</option>
+            <option value="reuniao">🤝 Reunião</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Prioridade</label>
+          <select id="new-day-prio">
+            <option value="alta">🔴 Alta</option>
+            <option value="media" selected>🟡 Média</option>
+            <option value="baixa">🟢 Baixa</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:8px"><label>Descrição</label>
+        <input type="text" id="new-day-desc" placeholder="O que precisa ser feito...">
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Obra</label><select id="new-day-obra">${obraOpts}</select></div>
+        <div class="form-group"><label>Comprador</label><select id="new-day-comp">${compOpts}</select></div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="btn btn-green btn-sm" onclick="saveNewDayTask('${dateStr}')">✅ Adicionar</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('new-day-task-area').style.display='none';document.getElementById('btn-add-day-task').style.display='block'">Cancelar</button>
+      </div>
+    </div>
+    <button class="add-day-task-btn" id="btn-add-day-task" onclick="document.getElementById('new-day-task-area').style.display='block';this.style.display='none'">➕ Adicionar nova tarefa neste dia</button>`;
+  }
+
+  if(!tasks.length) {
+    body.innerHTML = `<div class="empty-state" style="padding:20px"><div class="icon">📭</div><p>Nenhuma tarefa neste dia</p></div>${buildNewTaskForm()}`;
+  } else {
+    body.innerHTML = `<div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">${tasks.length} tarefa(s)</div>` +
+      tasks.map(t => buildTaskCard(t)).join('') + buildNewTaskForm();
+    // set select values after innerHTML
+    tasks.forEach(t => {
+      const obraSel = document.getElementById(`tedit-obra-${t.id}`);
+      const compSel = document.getElementById(`tedit-comp-${t.id}`);
+      if(obraSel) obraSel.value = t.obra||'';
+      if(compSel) compSel.value = t.comprador||'';
+    });
+  }
+  openModal('modal-day-tasks');
+}
+
+function toggleDayTaskEdit(id, dateStr) {
+  const form = document.getElementById(`tedit-${id}`);
+  if(!form) return;
+  form.classList.toggle('open');
+}
+
+function saveDayTask(id, dateStr) {
+  const t = state.agenda.find(x=>x.id===id);
+  if(!t) return;
+  t.hora = document.getElementById(`tedit-hora-${id}`).value;
+  t.tipo = document.getElementById(`tedit-tipo-${id}`).value;
+  t.prioridade = document.getElementById(`tedit-prio-${id}`).value;
+  t.desc = document.getElementById(`tedit-desc-${id}`).value;
+  t.obra = document.getElementById(`tedit-obra-${id}`).value;
+  t.comprador = document.getElementById(`tedit-comp-${id}`).value;
+  saveState(); renderAgenda(); renderCalendar();
+  openDayModal(dateStr);
+  notify('Tarefa atualizada!','✏️');
+}
+
+function finalizarTarefaDay(id, dateStr) {
+  const t = state.agenda.find(x=>x.id===id);
+  if(t) { t.finalizada=true; saveState(); renderAgenda(); renderCalendar(); openDayModal(dateStr); notify('Tarefa concluída!','✅'); }
+}
+function reabrirTarefaDay(id, dateStr) {
+  const t = state.agenda.find(x=>x.id===id);
+  if(t) { t.finalizada=false; saveState(); renderAgenda(); renderCalendar(); openDayModal(dateStr); notify('Tarefa reaberta.','🔓'); }
+}
+function excluirTarefaDay(id, dateStr) {
+  if(!confirm('Excluir esta tarefa?')) return;
+  state.agenda = state.agenda.filter(x=>x.id!==id);
+  saveState(); renderAgenda(); renderCalendar(); openDayModal(dateStr);
+}
+function saveNewDayTask(dateStr) {
+  const desc = document.getElementById('new-day-desc').value.trim();
+  if(!desc) { notify('Preencha a descrição!','⚠️'); return; }
+  state.agenda.unshift({
+    id: Date.now().toString(),
+    data: dateStr,
+    hora: document.getElementById('new-day-hora').value,
+    desc,
+    tipo: document.getElementById('new-day-tipo').value,
+    prioridade: document.getElementById('new-day-prio').value,
+    obra: document.getElementById('new-day-obra').value,
+    comprador: document.getElementById('new-day-comp').value,
+    finalizada: false,
+  });
+  saveState(); renderAgenda(); renderCalendar(); openDayModal(dateStr);
+  notify('Tarefa adicionada!','✅');
+}
+
+// ═══════════════════════════════════════════
+// COMPROMISSOS — VISÃO SEGUNDAS-FEIRAS
+// ═══════════════════════════════════════════
+let monYear = new Date().getFullYear();
+
+function setCmpView(view) {
+  document.getElementById('cmp-lista-section').classList.toggle('active', view==='lista');
+  document.getElementById('cmp-segundas-section').classList.toggle('active', view==='segundas');
+  document.getElementById('btn-view-lista').classList.toggle('active', view==='lista');
+  document.getElementById('btn-view-segundas').classList.toggle('active', view==='segundas');
+  if(view==='segundas') renderMondays();
+}
+
+function changeMonYear(dir) {
+  monYear += dir;
+  renderMondays();
+}
+
+function getMondaysOfYear(year) {
+  const mondays = [];
+  let d = new Date(year, 0, 1);
+  while(d.getDay() !== 1) d.setDate(d.getDate()+1);
+  while(d.getFullYear() === year) { mondays.push(new Date(d)); d.setDate(d.getDate()+7); }
+  return mondays;
+}
+
+function renderMondays() {
+  document.getElementById('mon-year-label').textContent = monYear;
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const todayStr = today.toISOString().split('T')[0];
+  const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const fullMonths = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+  // Find this week's monday
+  const thisMonday = new Date(today);
+  const dow = thisMonday.getDay();
+  const diff = dow===0 ? -6 : 1-dow;
+  thisMonday.setDate(thisMonday.getDate()+diff);
+  const thisMondayStr = thisMonday.toISOString().split('T')[0];
+
+  const mondays = getMondaysOfYear(monYear);
+  const list = document.getElementById('mondays-list');
+  if(!list) return;
+
+  list.innerHTML = mondays.map((mon, i) => {
+    const y = mon.getFullYear(), m = mon.getMonth(), d = mon.getDate();
+    const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const tasks = state.agenda.filter(t=>t.data===dateStr).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+    const isPast = dateStr < todayStr;
+    const isThis = dateStr === thisMondayStr;
+
+    const obraOpts = `<option value="">— Nenhuma —</option>` + state.obras.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
+    const compOpts = `<option value="">— Nenhum —</option>` + state.compradores.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+
+    const taskRows = tasks.map(t => {
+      const obra = state.obras.find(o=>o.id===t.obra);
+      const comp = state.compradores.find(c=>c.id===t.comprador);
+      return `<div class="monday-task-row" onclick="openDayModal('${dateStr}')">
+        <div class="prio-dot ${t.prioridade||'media'}"></div>
+        <div class="monday-task-time">${t.hora||'--:--'}</div>
+        <div class="monday-task-info">
+          <div class="monday-task-desc">${t.finalizada?'<s style="opacity:.5">':''}${t.desc}${t.finalizada?'</s>':''}</div>
+          <div class="monday-task-meta">
+            ${obra?`<span style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1px 6px;margin-right:4px"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${obra.cor||'#888'};margin-right:3px"></span>${obra.nome}</span>`:''}
+            ${comp?`<span style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1px 6px">👤 ${comp.nome}</span>`:''}
+          </div>
+        </div>
+        ${t.finalizada?'<span class="tag-finalizada" style="flex-shrink:0">✅</span>':''}
+      </div>`;
+    }).join('');
+
+    const badge = tasks.length===0
+      ? `<span class="monday-badge zero">Sem tarefas</span>`
+      : `<span class="monday-badge has-tasks">${tasks.length} tarefa${tasks.length>1?'s':''}</span>`;
+
+    return `<div class="monday-card">
+      <div class="monday-card-hdr" onclick="toggleMonCard(this)">
+        <div>
+          <div class="monday-card-hdr-left">
+            <div class="monday-indicator ${tasks.length>0?'has':''} ${isPast?'past':''}"></div>
+            <span class="monday-card-date">${d} de ${fullMonths[m]}${isThis?' <span style=\'font-size:10px;background:rgba(79,142,247,.15);color:#3ab4f2;border-radius:10px;padding:2px 8px;font-family:Syne,sans-serif;font-weight:700\'>ESTA SEMANA</span>':''}</span>
+          </div>
+          <div class="monday-card-sub">${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][mon.getDay()]} · ${months[m]} ${y}</div>
+        </div>
+        ${badge}
+      </div>
+      <div class="monday-card-body ${isThis?'open':''}">
+        ${tasks.length ? taskRows : '<div style="padding:12px 16px;font-size:12px;color:var(--muted)">Nenhuma tarefa nesta segunda-feira</div>'}
+        <div style="padding:8px 16px 12px">
+          <button class="add-day-task-btn" onclick="event.stopPropagation();openDayModal('${dateStr}')" style="font-size:12px;padding:7px">➕ Adicionar / editar tarefas deste dia</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleMonCard(hdr) {
+  const body = hdr.nextElementSibling;
+  body.classList.toggle('open');
 }
 
 // ═══════════════════════════════════════════
